@@ -132,6 +132,48 @@
         .table { width: 100%; border-collapse: collapse; }
         .table th, .table td { border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: left; }
         .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        nav[role="navigation"] {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        nav[role="navigation"] a,
+        nav[role="navigation"] span.inline-flex {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #fff;
+            color: #374151;
+            text-decoration: none;
+            line-height: 1;
+            font-size: 13px;
+        }
+        nav[role="navigation"] a:hover {
+            background: #f3f4f6;
+        }
+        nav[role="navigation"] span[aria-current="page"] > span {
+            background: #e5e7eb;
+            color: #111827;
+            font-weight: 600;
+        }
+        nav[role="navigation"] span[aria-disabled="true"] > span,
+        nav[role="navigation"] span.inline-flex.cursor-not-allowed {
+            color: #9ca3af;
+            background: #f9fafb;
+            cursor: not-allowed;
+        }
+        nav[role="navigation"] svg {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+            vertical-align: middle;
+        }
         .muted { color: #6b7280; }
         .badge { padding: 3px 8px; border-radius: 999px; font-size: 12px; }
         .badge-green { background: #dcfce7; color: #166534; }
