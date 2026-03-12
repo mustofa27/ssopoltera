@@ -444,7 +444,6 @@ The application redirect URI must match exactly the registered redirect URI in t
 
 For issues or questions, refer to:
 - Laravel Documentation: https://laravel.com/docs
-- Filament Documentation: https://filamentphp.com/docs
 - Microsoft Identity Platform: https://docs.microsoft.com/azure/active-directory/
 
 ## Integration Reference

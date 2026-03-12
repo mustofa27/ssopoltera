@@ -250,33 +250,33 @@ exit
 
 ```
 app/
-├── Filament/
-│   └── Resources/
-│       ├── UserResource.php
-│       ├── RoleResource.php
-│       ├── ApplicationResource.php
-│       └── SsoSessionResource.php
 ├── Http/
 │   ├── Controllers/Auth/
+│   │   ├── LoginController.php
 │   │   └── MicrosoftAuthController.php
+│   ├── Controllers/
+│   │   ├── OAuthController.php
+│   │   ├── SsoBackchannelLogoutController.php
+│   │   ├── TokenController.php
+│   │   └── ProfileSyncController.php
 │   └── Middleware/
 │       ├── CheckRole.php
-│       └── CheckPermission.php
+│       ├── CheckPermission.php
+│       ├── EnforceIpPolicy.php
+│       ├── EnsureSessionNotIdle.php
+│       └── EnsurePasswordNotExpired.php
 ├── Models/
 │   ├── User.php (updated)
 │   ├── Role.php
 │   ├── Application.php
-│   └── SsoSession.php
-├── Policies/
-│   ├── UserPolicy.php
-│   ├── RolePolicy.php
-│   ├── ApplicationPolicy.php
-│   └── SsoSessionPolicy.php
+│   ├── SsoSession.php
+│   └── OAuthAuthorizationCode.php
+├── Support/
+│   ├── AuditLogger.php
+│   ├── SingleLogoutService.php
+│   └── MicrosoftProfileSyncService.php
 └── Providers/
-    ├── AppServiceProvider.php (updated)
-    ├── EventServiceProvider.php
-    └── Filament/
-        └── AdminPanelProvider.php
+   └── AppServiceProvider.php
 
 database/
 ├── migrations/
@@ -339,6 +339,6 @@ After Phase 1 is working:
 Need help? Check:
 - [INSTALLATION.md](INSTALLATION.md) - Detailed installation guide
 - [README.md](README.md) - Project overview
+- [INTEGRATION_MANUAL.md](INTEGRATION_MANUAL.md) - External integration guide
 - Laravel Docs: https://laravel.com/docs
-- Filament Docs: https://filamentphp.com/docs
 - Azure AD Docs: https://docs.microsoft.com/azure/active-directory/

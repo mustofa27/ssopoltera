@@ -218,5 +218,5 @@ $user->update([
 ---
 
 **Current Status**: Hybrid authentication fully implemented ✅
-**Login Page**: Custom Filament page with Microsoft button
+**Login Page**: Custom Blade login page with Microsoft button
 **Password Column**: Nullable for flexibility
