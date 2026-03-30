@@ -8,7 +8,7 @@
                 <p class="muted mt-8">Import tenant users and synchronize local Microsoft-linked profiles from Microsoft Graph.</p>
             </div>
             <div class="form-inline">
-                <form method="POST" action="{{ route('profile-sync.import-all') }}" onsubmit="return confirm('Import users from Microsoft 365 into the local directory? This will create or update local accounts.')">
+                <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('profile-sync.import-all') ? route('profile-sync.import-all') : url('/profile-sync/import-all') }}" onsubmit="return confirm('Import users from Microsoft 365 into the local directory? This will create or update local accounts.')">
                     @csrf
                     <button class="btn" type="submit">Import All Tenant Users</button>
                 </form>

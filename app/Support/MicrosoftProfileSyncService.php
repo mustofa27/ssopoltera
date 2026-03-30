@@ -50,7 +50,16 @@ class MicrosoftProfileSyncService
             $response = $this->fetchMicrosoftUsersPage($token, $nextUrl);
 
             if (! $response->successful()) {
+                $graphErrorCode = (string) $response->json('error.code', '');
+                $graphErrorMessage = (string) $response->json('error.message', '');
+
                 $summary['message'] = 'Graph users request failed with status ' . $response->status() . '.';
+
+                if ($graphErrorCode !== '' || $graphErrorMessage !== '') {
+                    $detail = trim($graphErrorCode . ($graphErrorMessage !== '' ? ': ' . $graphErrorMessage : ''));
+                    $summary['message'] .= ' ' . $detail;
+                }
+
                 $summary['failed']++;
 
                 return $summary;
