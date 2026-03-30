@@ -83,6 +83,7 @@ Route::middleware(['ip.policy', 'auth', 'active', 'idle.timeout', 'password.expi
         Route::delete('/support-units/{supportUnit}', [SupportUnitController::class, 'destroy'])->name('support-units.destroy');
 
         Route::get('/profile-sync', [ProfileSyncController::class, 'index'])->name('profile-sync.index');
+        Route::post('/profile-sync/import-all', [ProfileSyncController::class, 'importAll'])->name('profile-sync.import-all');
         Route::post('/profile-sync/sync-all', [ProfileSyncController::class, 'syncAll'])->name('profile-sync.sync-all');
         Route::post('/profile-sync/{user}', [ProfileSyncController::class, 'syncUser'])->name('profile-sync.sync-user');
     });

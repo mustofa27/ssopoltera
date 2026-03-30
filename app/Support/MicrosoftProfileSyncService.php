@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Department;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\UserAffiliation;
 use Illuminate\Http\Client\Response;
@@ -10,6 +11,84 @@ use Illuminate\Support\Facades\Http;
 
 class MicrosoftProfileSyncService
 {
+    /**
+     * @return array{total:int, created:int, updated:int, skipped:int, failed:int, message:?string}
+     */
+    public function importAllMicrosoftUsers(): array
+    {
+        $summary = [
+            'total' => 0,
+            'created' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+            'failed' => 0,
+            'message' => null,
+        ];
+
+        if (! config('security.profile_sync.import_enabled', true)) {
+            $summary['message'] = 'Microsoft tenant import is disabled by configuration.';
+
+            return $summary;
+        }
+
+        $token = $this->getGraphAccessToken();
+
+        if (! $token) {
+            $summary['message'] = 'Unable to acquire Microsoft Graph access token.';
+
+            return $summary;
+        }
+
+        $configuredImportLimit = (int) config('security.profile_sync.import_limit', 500);
+        $remaining = $configuredImportLimit > 0 ? $configuredImportLimit : -1;
+        $nextUrl = $this->buildMicrosoftUsersImportUrl();
+        $defaultRole = Role::query()
+            ->where('slug', (string) config('security.profile_sync.import_default_role_slug', 'user'))
+            ->first();
+
+        while ($nextUrl !== null && ($remaining > 0 || $remaining === -1)) {
+            $response = $this->fetchMicrosoftUsersPage($token, $nextUrl);
+
+            if (! $response->successful()) {
+                $summary['message'] = 'Graph users request failed with status ' . $response->status() . '.';
+                $summary['failed']++;
+
+                return $summary;
+            }
+
+            $users = $response->json('value', []);
+
+            if (! is_array($users) || $users === []) {
+                $nextUrl = null;
+
+                continue;
+            }
+
+            foreach ($users as $payload) {
+                if ($remaining === 0) {
+                    break;
+                }
+
+                $summary['total']++;
+                $result = $this->upsertMicrosoftUser($payload, $defaultRole);
+                $summary[$result]++;
+
+                if ($remaining > 0) {
+                    $remaining--;
+                }
+            }
+
+            $nextUrl = $response->json('@odata.nextLink');
+            $nextUrl = is_string($nextUrl) && $nextUrl !== '' ? $nextUrl : null;
+        }
+
+        if ($summary['message'] === null && $nextUrl !== null && $remaining === 0) {
+            $summary['message'] = 'Import limit reached before processing the full Microsoft directory.';
+        }
+
+        return $summary;
+    }
+
     /**
      * @return array{success: bool, message: string}
      */
@@ -144,6 +223,96 @@ class MicrosoftProfileSyncService
             ->get("{$baseUrl}/users/{$microsoftId}", [
                 '$select' => 'id,displayName,mail,userPrincipalName,department,jobTitle',
             ]);
+    }
+
+    private function buildMicrosoftUsersImportUrl(): string
+    {
+        $baseUrl = rtrim((string) config('security.profile_sync.graph_base_url', 'https://graph.microsoft.com/v1.0'), '/');
+        $pageSize = min(999, max(1, (int) config('security.profile_sync.import_page_size', 100)));
+
+        return $baseUrl . '/users?$select=id,displayName,mail,userPrincipalName,department,jobTitle,userType,accountEnabled&$top=' . $pageSize;
+    }
+
+    private function fetchMicrosoftUsersPage(string $accessToken, string $nextUrl): Response
+    {
+        return Http::withToken($accessToken)
+            ->timeout((int) config('security.profile_sync.timeout_seconds', 10))
+            ->acceptJson()
+            ->get($nextUrl);
+    }
+
+    private function upsertMicrosoftUser(mixed $payload, ?Role $defaultRole): string
+    {
+        if (! is_array($payload)) {
+            return 'skipped';
+        }
+
+        $microsoftId = trim((string) ($payload['id'] ?? ''));
+        $userType = trim((string) ($payload['userType'] ?? ''));
+
+        if ($microsoftId === '') {
+            return 'skipped';
+        }
+
+        if ($userType === 'Guest' && ! config('security.profile_sync.import_include_guests', false)) {
+            return 'skipped';
+        }
+
+        $incomingEmail = trim((string) ($payload['mail'] ?? $payload['userPrincipalName'] ?? ''));
+
+        if ($incomingEmail === '') {
+            return 'skipped';
+        }
+
+        $user = User::query()
+            ->where('microsoft_id', $microsoftId)
+            ->first();
+
+        if (! $user) {
+            $user = User::query()
+                ->whereRaw('LOWER(email) = ?', [strtolower($incomingEmail)])
+                ->first();
+        }
+
+        $wasRecentlyCreated = false;
+
+        if (! $user) {
+            $user = new User();
+            $wasRecentlyCreated = true;
+        }
+
+        $emailToPersist = $incomingEmail;
+
+        if ($user->exists && strcasecmp((string) $user->email, $incomingEmail) !== 0) {
+            $duplicate = User::query()
+                ->whereRaw('LOWER(email) = ?', [strtolower($incomingEmail)])
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            if ($duplicate) {
+                $emailToPersist = (string) $user->email;
+            }
+        }
+
+        $user->forceFill([
+            'name' => trim((string) ($payload['displayName'] ?? '')) ?: ($user->name ?: $incomingEmail),
+            'email' => $emailToPersist,
+            'microsoft_id' => $microsoftId,
+            'department' => trim((string) ($payload['department'] ?? '')) ?: $user->department,
+            'job_title' => trim((string) ($payload['jobTitle'] ?? '')) ?: $user->job_title,
+            'is_active' => array_key_exists('accountEnabled', $payload) ? (bool) $payload['accountEnabled'] : ($user->is_active ?? true),
+            'email_verified_at' => $user->email_verified_at ?? now(),
+            'microsoft_synced_at' => now(),
+            'microsoft_sync_error' => null,
+        ])->save();
+
+        $this->syncDepartmentAffiliation($user, trim((string) ($payload['department'] ?? '')));
+
+        if ($wasRecentlyCreated && $defaultRole && $user->roles()->count() === 0) {
+            $user->roles()->attach($defaultRole->id);
+        }
+
+        return $wasRecentlyCreated ? 'created' : 'updated';
     }
 
     private function syncDepartmentAffiliation(User $user, string $departmentName): void

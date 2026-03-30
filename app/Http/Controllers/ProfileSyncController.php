@@ -39,6 +39,31 @@ class ProfileSyncController extends Controller
         return view('profile-sync.index', compact('users', 'stats', 'search'));
     }
 
+    public function importAll(Request $request, MicrosoftProfileSyncService $service): RedirectResponse
+    {
+        $summary = $service->importAllMicrosoftUsers();
+
+        AuditLogger::log(
+            event: 'profile.sync',
+            action: 'import_all',
+            request: $request,
+            targetType: User::class,
+            metadata: $summary
+        );
+
+        $flashType = $summary['failed'] > 0 && $summary['created'] === 0 && $summary['updated'] === 0
+            ? 'error'
+            : 'success';
+
+        $message = "Microsoft import complete. Total: {$summary['total']}, Created: {$summary['created']}, Updated: {$summary['updated']}, Skipped: {$summary['skipped']}, Failed: {$summary['failed']}.";
+
+        if (! empty($summary['message'])) {
+            $message .= ' ' . $summary['message'];
+        }
+
+        return back()->with($flashType, $message);
+    }
+
     public function syncAll(Request $request, MicrosoftProfileSyncService $service): RedirectResponse
     {
         $summary = $service->syncAllMicrosoftUsers();

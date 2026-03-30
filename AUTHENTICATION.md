@@ -4,6 +4,7 @@
 This SSO system uses a **hybrid authentication approach**:
 - **Primary**: Microsoft 365 SSO (recommended for all users)
 - **Emergency**: Email/password login (for break-glass admin access)
+- **Directory Import**: Microsoft Graph app-only import for tenant user provisioning
 
 ## Login Methods
 
@@ -214,6 +215,27 @@ $user->update([
 - IP restrictions for password logins
 - Failed login attempt tracking
 - Account lockout policies
+
+## Microsoft Tenant Import
+
+The admin profile sync screen now supports importing Microsoft 365 users into the local directory.
+
+Requirements:
+- Configure `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, and a real `MICROSOFT_TENANT_ID`
+- Grant Microsoft Graph application permission such as `User.Read.All` or `Directory.Read.All`
+- Grant admin consent in Entra ID
+
+Behavior:
+- Imports users from Microsoft Graph `/users`
+- Creates missing local users with the default `user` role
+- Updates existing local users by `microsoft_id` first, then by email
+- Skips guest users by default unless `SECURITY_PROFILE_IMPORT_INCLUDE_GUESTS=true`
+
+Command:
+
+```bash
+php artisan profile-import:microsoft
+```
 
 ---
 

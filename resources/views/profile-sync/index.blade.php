@@ -5,12 +5,18 @@
         <div class="row-between">
             <div>
                 <h2 class="heading-reset">Profile Synchronization</h2>
-                <p class="muted mt-8">Synchronize user profile, department, and job title from Microsoft Graph.</p>
+                <p class="muted mt-8">Import tenant users and synchronize local Microsoft-linked profiles from Microsoft Graph.</p>
             </div>
-            <form method="POST" action="{{ route('profile-sync.sync-all') }}" onsubmit="return confirm('Run synchronization for all Microsoft-linked users?')">
-                @csrf
-                <button class="btn" type="submit">Sync All Linked Users</button>
-            </form>
+            <div class="form-inline">
+                <form method="POST" action="{{ route('profile-sync.import-all') }}" onsubmit="return confirm('Import users from Microsoft 365 into the local directory? This will create or update local accounts.')">
+                    @csrf
+                    <button class="btn" type="submit">Import All Tenant Users</button>
+                </form>
+                <form method="POST" action="{{ route('profile-sync.sync-all') }}" onsubmit="return confirm('Run synchronization for all Microsoft-linked users?')">
+                    @csrf
+                    <button class="btn btn-secondary" type="submit">Sync All Linked Users</button>
+                </form>
+            </div>
         </div>
     </div>
 

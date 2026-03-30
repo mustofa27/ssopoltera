@@ -40,8 +40,9 @@ Centralized Single Sign-On (SSO) platform for campus systems, built with Laravel
 
 ### Profile Synchronization
 - Microsoft Graph profile sync (manual and bulk)
+- Microsoft tenant user import (admin UI + CLI)
 - Sync status tracking (`microsoft_synced_at`, `microsoft_sync_error`)
-- Admin UI (`/profile-sync`) + CLI command (`php artisan profile-sync:microsoft`)
+- Admin UI (`/profile-sync`) + CLI commands (`php artisan profile-sync:microsoft`, `php artisan profile-import:microsoft`)
 
 ## Quick Start
 
@@ -82,6 +83,7 @@ php artisan serve
 - Set `APP_ENV=staging`, `APP_DEBUG=false`
 - Use HTTPS and secure cookie/session settings
 - Configure Microsoft credentials and Graph access in `.env`
+- For tenant import, grant Microsoft Graph application permission such as `User.Read.All` or `Directory.Read.All` and use a real tenant ID in `MICROSOFT_TENANT_ID`
 - Run `php artisan optimize:clear` after deployment
 - Validate OAuth + SLO + profile-sync flows end-to-end
 
