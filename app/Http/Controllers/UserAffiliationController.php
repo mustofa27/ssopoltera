@@ -31,50 +31,53 @@ class UserAffiliationController extends Controller
     public function storeForDepartment(Request $request, Department $department): RedirectResponse
     {
         $validated = $request->validate([
-            'user_id' => ['required', 'exists:users,id'],
+            'user_ids'   => ['required', 'array', 'min:1'],
+            'user_ids.*' => ['required', 'exists:users,id'],
             'is_primary' => ['nullable', 'boolean'],
         ]);
 
-        $user = User::query()->findOrFail($validated['user_id']);
         $isPrimary = (bool) ($validated['is_primary'] ?? false);
+        $users = User::query()->whereIn('id', $validated['user_ids'])->get();
+        $attached = 0;
+        $skipped = [];
 
-        if ($isPrimary && $this->requiresProgramStudyPrimary($user)) {
-            return back()
-                ->withErrors(['is_primary' => 'Primary affiliation for this user must be attached from Program Studies.'])
-                ->withInput();
-        }
-
-        $exists = UserAffiliation::query()
-            ->where('user_id', $user->id)
-            ->where('department_id', $department->id)
-            ->whereNull('program_study_id')
-            ->whereNull('support_unit_id')
-            ->exists();
-
-        if ($exists) {
-            return back()
-                ->withErrors(['user_id' => 'This user is already attached to the selected department.'])
-                ->withInput();
-        }
-
-        DB::transaction(function () use ($department, $user, $isPrimary) {
-            if ($isPrimary) {
-                $user->affiliations()->update(['is_primary' => false]);
+        foreach ($users as $user) {
+            if ($isPrimary && $this->requiresProgramStudyPrimary($user)) {
+                $skipped[] = $user->email . ' (must use Program Studies for primary)';
+                continue;
             }
 
-            UserAffiliation::create([
-                'user_id' => $user->id,
-                'department_id' => $department->id,
-                'affiliation_type' => $this->resolveAffiliationType($user),
-                'is_primary' => $isPrimary,
-            ]);
+            $exists = UserAffiliation::query()
+                ->where('user_id', $user->id)
+                ->where('department_id', $department->id)
+                ->whereNull('program_study_id')
+                ->whereNull('support_unit_id')
+                ->exists();
 
-            if ($isPrimary) {
-                $user->forceFill([
-                    'department' => $department->name,
-                ])->save();
+            if ($exists) {
+                $skipped[] = $user->email . ' (already attached)';
+                continue;
             }
-        });
+
+            DB::transaction(function () use ($department, $user, $isPrimary) {
+                if ($isPrimary) {
+                    $user->affiliations()->update(['is_primary' => false]);
+                }
+
+                UserAffiliation::create([
+                    'user_id'          => $user->id,
+                    'department_id'    => $department->id,
+                    'affiliation_type' => $this->resolveAffiliationType($user),
+                    'is_primary'       => $isPrimary,
+                ]);
+
+                if ($isPrimary) {
+                    $user->forceFill(['department' => $department->name])->save();
+                }
+            });
+
+            $attached++;
+        }
 
         AuditLogger::log(
             event: 'organization.management',
@@ -85,13 +88,21 @@ class UserAffiliationController extends Controller
             targetId: $department->id,
             targetLabel: $department->name,
             metadata: [
-                'attached_user_id' => $user->id,
-                'attached_user_email' => $user->email,
-                'is_primary' => $isPrimary,
+                'attached_count' => $attached,
+                'skipped'        => $skipped,
+                'is_primary'     => $isPrimary,
             ]
         );
 
-        return redirect()->route('departments.index')->with('success', 'User affiliation attached to department successfully.');
+        $message = "Attached {$attached} user(s) to department.";
+        if (count($skipped) > 0) {
+            $message .= ' Skipped: ' . implode(', ', $skipped);
+        }
+
+        return redirect()->route('departments.index')->with(
+            $attached > 0 ? 'success' : 'error',
+            $message
+        );
     }
 
     public function createForProgramStudy(ProgramStudy $programStudy): View
@@ -113,44 +124,50 @@ class UserAffiliationController extends Controller
     public function storeForProgramStudy(Request $request, ProgramStudy $programStudy): RedirectResponse
     {
         $validated = $request->validate([
-            'user_id' => ['required', 'exists:users,id'],
+            'user_ids'   => ['required', 'array', 'min:1'],
+            'user_ids.*' => ['required', 'exists:users,id'],
             'is_primary' => ['nullable', 'boolean'],
         ]);
 
         $programStudy->loadMissing('department');
-        $user = User::query()->findOrFail($validated['user_id']);
         $isPrimary = (bool) ($validated['is_primary'] ?? false);
+        $users = User::query()->whereIn('id', $validated['user_ids'])->get();
+        $attached = 0;
+        $skipped = [];
 
-        $exists = UserAffiliation::query()
-            ->where('user_id', $user->id)
-            ->where('program_study_id', $programStudy->id)
-            ->exists();
+        foreach ($users as $user) {
+            $exists = UserAffiliation::query()
+                ->where('user_id', $user->id)
+                ->where('program_study_id', $programStudy->id)
+                ->exists();
 
-        if ($exists) {
-            return back()
-                ->withErrors(['user_id' => 'This user is already attached to the selected program study.'])
-                ->withInput();
+            if ($exists) {
+                $skipped[] = $user->email . ' (already attached)';
+                continue;
+            }
+
+            DB::transaction(function () use ($programStudy, $user, $isPrimary) {
+                if ($isPrimary) {
+                    $user->affiliations()->update(['is_primary' => false]);
+                }
+
+                UserAffiliation::create([
+                    'user_id'          => $user->id,
+                    'department_id'    => $programStudy->department_id,
+                    'program_study_id' => $programStudy->id,
+                    'affiliation_type' => $this->resolveAffiliationType($user),
+                    'is_primary'       => $isPrimary,
+                ]);
+
+                if ($isPrimary) {
+                    $user->forceFill([
+                        'department' => $programStudy->department?->name,
+                    ])->save();
+                }
+            });
+
+            $attached++;
         }
-
-        DB::transaction(function () use ($programStudy, $user, $isPrimary) {
-            if ($isPrimary) {
-                $user->affiliations()->update(['is_primary' => false]);
-            }
-
-            UserAffiliation::create([
-                'user_id' => $user->id,
-                'department_id' => $programStudy->department_id,
-                'program_study_id' => $programStudy->id,
-                'affiliation_type' => $this->resolveAffiliationType($user),
-                'is_primary' => $isPrimary,
-            ]);
-
-            if ($isPrimary) {
-                $user->forceFill([
-                    'department' => $programStudy->department?->name,
-                ])->save();
-            }
-        });
 
         AuditLogger::log(
             event: 'organization.management',
@@ -161,14 +178,22 @@ class UserAffiliationController extends Controller
             targetId: $programStudy->id,
             targetLabel: $programStudy->name,
             metadata: [
-                'attached_user_id' => $user->id,
-                'attached_user_email' => $user->email,
-                'department_id' => $programStudy->department_id,
-                'is_primary' => $isPrimary,
+                'attached_count' => $attached,
+                'skipped'        => $skipped,
+                'department_id'  => $programStudy->department_id,
+                'is_primary'     => $isPrimary,
             ]
         );
 
-        return redirect()->route('program-studies.index')->with('success', 'User affiliation attached to program study successfully.');
+        $message = "Attached {$attached} user(s) to program study.";
+        if (count($skipped) > 0) {
+            $message .= ' Skipped: ' . implode(', ', $skipped);
+        }
+
+        return redirect()->route('program-studies.index')->with(
+            $attached > 0 ? 'success' : 'error',
+            $message
+        );
     }
 
     private function requiresProgramStudyPrimary(User $user): bool

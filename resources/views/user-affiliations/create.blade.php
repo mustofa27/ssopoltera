@@ -22,22 +22,25 @@
             @csrf
 
             <div class="mb-16">
-                <label class="label" for="user_id">User</label>
-                <select class="input" id="user_id" name="user_id" required>
-                    <option value="">Select user</option>
+                <label class="label" for="user_ids">Users <span class="muted text-sm">(hold Ctrl / Cmd to select multiple)</span></label>
+                <select class="input" id="user_ids" name="user_ids[]" multiple required style="height:220px">
                     @foreach($users as $user)
                         @php
                             $primaryAffiliation = $user->primaryAffiliation;
                             $currentAffiliation = $primaryAffiliation?->programStudy?->name
                                 ?? $primaryAffiliation?->department?->name
                                 ?? 'No primary affiliation';
+                            $selected = in_array((string) $user->id, (array) old('user_ids', []));
                         @endphp
-                        <option value="{{ $user->id }}" {{ (string) old('user_id') === (string) $user->id ? 'selected' : '' }}>
-                            {{ $user->name }} - {{ $user->email }} - {{ $currentAffiliation }}
+                        <option value="{{ $user->id }}" {{ $selected ? 'selected' : '' }}>
+                            {{ $user->name }} — {{ $user->email }} — {{ $currentAffiliation }}
                         </option>
                     @endforeach
                 </select>
-                @error('user_id')
+                @error('user_ids')
+                    <div class="muted text-red mt-4">{{ $message }}</div>
+                @enderror
+                @error('user_ids.*')
                     <div class="muted text-red mt-4">{{ $message }}</div>
                 @enderror
             </div>
