@@ -14,6 +14,7 @@ use App\Http\Controllers\SsoBackchannelLogoutController;
 use App\Http\Controllers\SsoSessionController;
 use App\Http\Controllers\SupportUnitController;
 use App\Http\Controllers\TokenController;
+use App\Http\Controllers\UserAffiliationController;
 use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +65,8 @@ Route::middleware(['ip.policy', 'auth', 'active', 'idle.timeout', 'password.expi
         Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
         Route::get('/departments/create', [DepartmentController::class, 'create'])->name('departments.create');
         Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
+        Route::get('/departments/{department}/affiliations/create', [UserAffiliationController::class, 'createForDepartment'])->name('departments.affiliations.create');
+        Route::post('/departments/{department}/affiliations', [UserAffiliationController::class, 'storeForDepartment'])->name('departments.affiliations.store');
         Route::get('/departments/{department}/edit', [DepartmentController::class, 'edit'])->name('departments.edit');
         Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
         Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
@@ -71,6 +74,8 @@ Route::middleware(['ip.policy', 'auth', 'active', 'idle.timeout', 'password.expi
         Route::get('/program-studies', [ProgramStudyController::class, 'index'])->name('program-studies.index');
         Route::get('/program-studies/create', [ProgramStudyController::class, 'create'])->name('program-studies.create');
         Route::post('/program-studies', [ProgramStudyController::class, 'store'])->name('program-studies.store');
+        Route::get('/program-studies/{programStudy}/affiliations/create', [UserAffiliationController::class, 'createForProgramStudy'])->name('program-studies.affiliations.create');
+        Route::post('/program-studies/{programStudy}/affiliations', [UserAffiliationController::class, 'storeForProgramStudy'])->name('program-studies.affiliations.store');
         Route::get('/program-studies/{programStudy}/edit', [ProgramStudyController::class, 'edit'])->name('program-studies.edit');
         Route::put('/program-studies/{programStudy}', [ProgramStudyController::class, 'update'])->name('program-studies.update');
         Route::delete('/program-studies/{programStudy}', [ProgramStudyController::class, 'destroy'])->name('program-studies.destroy');

@@ -43,6 +43,7 @@
                             </td>
                             <td>{{ $programStudy->user_affiliations_count }}</td>
                             <td>
+                                <a class="btn btn-secondary" href="{{ route('program-studies.affiliations.create', $programStudy) }}">Attach User</a>
                                 <a class="btn btn-secondary" href="{{ route('program-studies.edit', $programStudy) }}">Edit</a>
                                 <form method="POST" action="{{ route('program-studies.destroy', $programStudy) }}" class="inline-form" onsubmit="return confirm('Delete this program study?')">
                                     @csrf

@@ -41,6 +41,7 @@
                             <td>{{ $department->program_studies_count }}</td>
                             <td>{{ $department->user_affiliations_count }}</td>
                             <td>
+                                <a class="btn btn-secondary" href="{{ route('departments.affiliations.create', $department) }}">Attach User</a>
                                 <a class="btn btn-secondary" href="{{ route('departments.edit', $department) }}">Edit</a>
                                 <form method="POST" action="{{ route('departments.destroy', $department) }}" class="inline-form" onsubmit="return confirm('Delete this department?')">
                                     @csrf
