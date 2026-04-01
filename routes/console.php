@@ -18,6 +18,7 @@ Artisan::command('profile-import:microsoft', function (MicrosoftProfileSyncServi
     $summary = $service->importAllMicrosoftUsers();
 
     $this->info("Microsoft import complete. Total: {$summary['total']} | Created: {$summary['created']} | Updated: {$summary['updated']} | Skipped: {$summary['skipped']} | Failed: {$summary['failed']}");
+    $this->line("Pages processed: {$summary['pages_processed']} | Config page size: {$summary['config_page_size']} | Config limit: {$summary['config_limit']}");
 
     if (! empty($summary['message'])) {
         $this->warn($summary['message']);

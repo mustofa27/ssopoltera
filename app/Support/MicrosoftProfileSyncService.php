@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Http;
 class MicrosoftProfileSyncService
 {
     /**
-     * @return array{total:int, created:int, updated:int, skipped:int, failed:int, message:?string}
+     * @return array{total:int, created:int, updated:int, skipped:int, failed:int, message:?string, pages_processed:int, config_page_size:int, config_limit:int}
      */
     public function importAllMicrosoftUsers(): array
     {
@@ -23,6 +23,9 @@ class MicrosoftProfileSyncService
             'skipped' => 0,
             'failed' => 0,
             'message' => null,
+            'pages_processed' => 0,
+            'config_page_size' => (int) config('security.profile_sync.import_page_size', 100),
+            'config_limit' => (int) config('security.profile_sync.import_limit', 500),
         ];
 
         if (! config('security.profile_sync.import_enabled', true)) {
@@ -47,6 +50,7 @@ class MicrosoftProfileSyncService
             ->first();
 
         while ($nextUrl !== null && ($remaining > 0 || $remaining === -1)) {
+            $summary['pages_processed']++;
             $response = $this->fetchMicrosoftUsersPage($token, $nextUrl);
 
             if (! $response->successful()) {

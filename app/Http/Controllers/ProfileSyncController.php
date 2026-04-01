@@ -56,6 +56,7 @@ class ProfileSyncController extends Controller
             : 'success';
 
         $message = "Microsoft import complete. Total: {$summary['total']}, Created: {$summary['created']}, Updated: {$summary['updated']}, Skipped: {$summary['skipped']}, Failed: {$summary['failed']}.";
+        $message .= " (Pages: {$summary['pages_processed']}, Page size: {$summary['config_page_size']}, Limit: {$summary['config_limit']})";
 
         if (! empty($summary['message'])) {
             $message .= ' ' . $summary['message'];
