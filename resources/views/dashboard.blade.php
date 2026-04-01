@@ -23,7 +23,7 @@
         </div>
     </div>
 
-    <div class="card mt-20">
+    <div class="card mt-28">
         <div class="row-between mb-16">
             <div>
                 <h3 class="heading-top-reset">Registered Applications</h3>
