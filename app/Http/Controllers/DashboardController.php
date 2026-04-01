@@ -33,6 +33,7 @@ class DashboardController extends Controller
             })
             ->map(function (Application $application) use ($currentUser) {
                 $application->setAttribute('is_accessible', $currentUser ? $application->isAccessibleToUser($currentUser) : false);
+                $application->setAttribute('launch_url', $this->resolveLaunchUrl((string) $application->redirect_uri));
 
                 return $application;
             })
@@ -49,5 +50,22 @@ class DashboardController extends Controller
             'availableApplications' => $availableApplications,
             'accessibleApplicationCount' => $accessibleApplications->count(),
         ]);
+    }
+
+    private function resolveLaunchUrl(string $redirectUri): string
+    {
+        $parts = parse_url($redirectUri);
+
+        if (! is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return $redirectUri;
+        }
+
+        $baseUrl = $parts['scheme'] . '://' . $parts['host'];
+
+        if (! empty($parts['port'])) {
+            $baseUrl .= ':' . $parts['port'];
+        }
+
+        return $baseUrl;
     }
 }

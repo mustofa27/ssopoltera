@@ -53,7 +53,7 @@
                         <div class="muted text-xs mt-8" style="white-space:normal; overflow-wrap:anywhere; word-break:break-word;">{{ $application->redirect_uri }}</div>
 
                         <div class="flex mt-14">
-                            <a class="btn" href="{{ $application->redirect_uri }}" target="_blank" rel="noopener noreferrer">Open App</a>
+                            <a class="btn" href="{{ $application->getAttribute('launch_url') }}" target="_blank" rel="noopener noreferrer">Open App</a>
                         </div>
                     </div>
                 @endforeach
