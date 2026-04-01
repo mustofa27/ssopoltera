@@ -58,6 +58,25 @@ class OAuthController extends Controller
             return $this->authorizationError($validated['redirect_uri'], 'access_denied', 'User has no access to this application for the current role or user type.', $validated['state'] ?? null);
         }
 
+        if (! $application->allowsUserType($user->user_type)) {
+            AuditLogger::log(
+                event: 'oauth.authorization',
+                action: 'denied',
+                request: $request,
+                userId: $user->id,
+                targetType: Application::class,
+                targetId: $application->id,
+                targetLabel: $application->slug,
+                metadata: [
+                    'reason' => 'user_type_not_allowed',
+                    'user_type' => $user->user_type,
+                    'allowed_user_types' => $application->allowed_user_types,
+                ]
+            );
+
+            return $this->authorizationError($validated['redirect_uri'], 'access_denied', 'User type is not allowed for this application.', $validated['state'] ?? null);
+        }
+
         $requestedScopes = collect(explode(' ', trim((string) ($validated['scope'] ?? ''))))
             ->map(fn (string $scope) => trim($scope))
             ->filter()
@@ -135,6 +154,30 @@ class OAuthController extends Controller
 
         if (! $authorizationCode || $authorizationCode->expires_at->isPast()) {
             return response()->json(['error' => 'invalid_grant'], 400);
+        }
+
+        $authorizedUser = User::query()->find($authorizationCode->user_id);
+
+        if (! $authorizedUser || ! $application->allowsUserType($authorizedUser->user_type)) {
+            AuditLogger::log(
+                event: 'oauth.token',
+                action: 'denied',
+                request: $request,
+                userId: $authorizationCode->user_id,
+                targetType: Application::class,
+                targetId: $application->id,
+                targetLabel: $application->slug,
+                metadata: [
+                    'reason' => 'user_type_not_allowed',
+                    'user_type' => $authorizedUser?->user_type,
+                    'allowed_user_types' => $application->allowed_user_types,
+                ]
+            );
+
+            return response()->json([
+                'error' => 'access_denied',
+                'error_description' => 'User type is not allowed for this application.',
+            ], 403);
         }
 
         $accessToken = Str::random(80);
