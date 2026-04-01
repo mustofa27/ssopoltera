@@ -102,6 +102,7 @@ class User extends Authenticatable
 
         return $this->roles
             ->flatMap(fn (Role $role) => $role->applications)
+            ->filter(fn (Application $application) => $application->allowsUserType($this->user_type))
             ->unique('id')
             ->values();
     }
@@ -156,6 +157,12 @@ class User extends Authenticatable
      */
     public function hasAccessToApplication(int $applicationId): bool
     {
-        return $this->applications()->contains(fn (Application $application) => $application->id === $applicationId);
+        $application = Application::query()->find($applicationId);
+
+        if (! $application) {
+            return false;
+        }
+
+        return $application->isAccessibleToUser($this);
     }
 }

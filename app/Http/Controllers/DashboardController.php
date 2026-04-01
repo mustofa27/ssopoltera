@@ -27,12 +27,8 @@ class DashboardController extends Controller
             ->orderBy('name')
             ->get();
 
-        $accessibleApplicationIds = $currentUser
-            ? $currentUser->applications()->pluck('id')->all()
-            : [];
-
-        $availableApplications = $registeredApplications->map(function (Application $application) use ($accessibleApplicationIds) {
-            $application->setAttribute('is_accessible', in_array($application->id, $accessibleApplicationIds, true));
+        $availableApplications = $registeredApplications->map(function (Application $application) use ($currentUser) {
+            $application->setAttribute('is_accessible', $currentUser ? $application->isAccessibleToUser($currentUser) : false);
 
             return $application;
         });

@@ -36,8 +36,9 @@ class ApplicationController extends Controller
     public function create(): View
     {
         $roles = Role::orderBy('name')->get(['id', 'name', 'slug']);
+        $userTypes = $this->userTypes();
 
-        return view('applications.create', compact('roles'));
+        return view('applications.create', compact('roles', 'userTypes'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -51,6 +52,8 @@ class ApplicationController extends Controller
             'logo' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
             'allowed_scopes' => ['nullable', 'string'],
+            'allowed_user_types' => ['nullable', 'array'],
+            'allowed_user_types.*' => ['in:student,employee'],
             'roles' => ['nullable', 'array'],
             'roles.*' => ['exists:roles,id'],
         ]);
@@ -64,6 +67,7 @@ class ApplicationController extends Controller
             'logo' => $validated['logo'] ?? null,
             'is_active' => (bool) ($validated['is_active'] ?? false),
             'allowed_scopes' => $this->normalizeScopes($validated['allowed_scopes'] ?? null),
+            'allowed_user_types' => $this->normalizeUserTypes($validated['allowed_user_types'] ?? []),
         ]);
 
         $application->roles()->sync($validated['roles'] ?? []);
@@ -78,6 +82,7 @@ class ApplicationController extends Controller
             metadata: [
                 'redirect_uri' => $application->redirect_uri,
                 'logout_uri' => $application->logout_uri,
+                'allowed_user_types' => $application->allowed_user_types,
                 'roles' => $application->roles()->pluck('slug')->all(),
             ]
         );
@@ -98,8 +103,9 @@ class ApplicationController extends Controller
     {
         $roles = Role::orderBy('name')->get(['id', 'name', 'slug']);
         $application->load('roles:id');
+        $userTypes = $this->userTypes();
 
-        return view('applications.edit', compact('application', 'roles'));
+        return view('applications.edit', compact('application', 'roles', 'userTypes'));
     }
 
     public function update(Request $request, Application $application): RedirectResponse
@@ -113,6 +119,8 @@ class ApplicationController extends Controller
             'logo' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
             'allowed_scopes' => ['nullable', 'string'],
+            'allowed_user_types' => ['nullable', 'array'],
+            'allowed_user_types.*' => ['in:student,employee'],
             'roles' => ['nullable', 'array'],
             'roles.*' => ['exists:roles,id'],
         ]);
@@ -126,6 +134,7 @@ class ApplicationController extends Controller
             'logo' => $validated['logo'] ?? null,
             'is_active' => (bool) ($validated['is_active'] ?? false),
             'allowed_scopes' => $this->normalizeScopes($validated['allowed_scopes'] ?? null),
+            'allowed_user_types' => $this->normalizeUserTypes($validated['allowed_user_types'] ?? []),
         ]);
 
         $application->roles()->sync($validated['roles'] ?? []);
@@ -141,6 +150,7 @@ class ApplicationController extends Controller
                 'redirect_uri' => $application->redirect_uri,
                 'logout_uri' => $application->logout_uri,
                 'is_active' => $application->is_active,
+                'allowed_user_types' => $application->allowed_user_types,
             ]
         );
 
@@ -201,5 +211,30 @@ class ApplicationController extends Controller
             ->unique()
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  array<int, string>  $userTypes
+     * @return array<int, string>
+     */
+    private function normalizeUserTypes(array $userTypes): array
+    {
+        return collect($userTypes)
+            ->map(fn (string $userType) => trim($userType))
+            ->filter(fn (string $userType) => in_array($userType, ['student', 'employee'], true))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function userTypes(): array
+    {
+        return [
+            'student' => 'Student',
+            'employee' => 'Employee',
+        ];
     }
 }

@@ -55,7 +55,7 @@ class OAuthController extends Controller
                 metadata: ['reason' => 'application_access_denied']
             );
 
-            return $this->authorizationError($validated['redirect_uri'], 'access_denied', 'User has no access to this application.', $validated['state'] ?? null);
+            return $this->authorizationError($validated['redirect_uri'], 'access_denied', 'User has no access to this application for the current role or user type.', $validated['state'] ?? null);
         }
 
         $requestedScopes = collect(explode(' ', trim((string) ($validated['scope'] ?? ''))))

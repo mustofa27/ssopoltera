@@ -49,6 +49,20 @@
                 <input class="input" id="allowed_scopes" type="text" name="allowed_scopes" value="{{ $selectedScopes }}">
             </div>
 
+            @php $selectedUserTypes = old('allowed_user_types', $application->allowed_user_types ?? []); @endphp
+            <div class="mb-16">
+                <label class="label">Allowed User Types</label>
+                <div class="choice-group">
+                    @foreach($userTypes as $value => $label)
+                        <label class="choice-item">
+                            <input type="checkbox" name="allowed_user_types[]" value="{{ $value }}" {{ in_array($value, $selectedUserTypes, true) ? 'checked' : '' }}>
+                            <span>{{ $label }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                <p class="muted mt-8">Leave unchecked to allow all user types.</p>
+            </div>
+
             <div class="mb-16">
                 <label class="choice-item">
                     <input type="checkbox" name="is_active" value="1" {{ old('is_active', $application->is_active) ? 'checked' : '' }}>

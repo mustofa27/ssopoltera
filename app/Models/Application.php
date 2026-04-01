@@ -24,11 +24,13 @@ class Application extends Model
         'logo',
         'is_active',
         'allowed_scopes',
+        'allowed_user_types',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'allowed_scopes' => 'array',
+        'allowed_user_types' => 'array',
     ];
 
     protected $hidden = [
@@ -71,8 +73,41 @@ class Application extends Model
 
         return $this->roles
             ->flatMap(fn (Role $role) => $role->users)
+            ->filter(fn (User $user) => $this->allowsUserType($user->user_type))
             ->unique('id')
             ->values();
+    }
+
+    public function allowsUserType(?string $userType): bool
+    {
+        $allowedUserTypes = collect($this->allowed_user_types ?? [])
+            ->filter()
+            ->values();
+
+        if ($allowedUserTypes->isEmpty()) {
+            return true;
+        }
+
+        if ($userType === null || $userType === '') {
+            return false;
+        }
+
+        return $allowedUserTypes->contains($userType);
+    }
+
+    public function isAccessibleToUser(User $user): bool
+    {
+        if (! $this->is_active) {
+            return false;
+        }
+
+        if (! $this->allowsUserType($user->user_type)) {
+            return false;
+        }
+
+        return $user->roles()
+            ->whereIn('roles.id', $this->roles()->pluck('roles.id'))
+            ->exists();
     }
 
     /**

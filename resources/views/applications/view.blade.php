@@ -35,6 +35,15 @@
                 <span class="muted">-</span>
             @endif
         </p>
+        <p><strong>Allowed User Types:</strong>
+            @if(!empty($application->allowed_user_types))
+                @foreach($application->allowed_user_types as $userType)
+                    <span class="badge badge-blue">{{ ucfirst($userType) }}</span>
+                @endforeach
+            @else
+                <span class="muted">All user types</span>
+            @endif
+        </p>
 
         <div class="mb-16 card card-soft">
             <div class="mb-12">
