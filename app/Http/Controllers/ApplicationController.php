@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Support\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -43,7 +44,7 @@ class ApplicationController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        $validationRules = [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'alpha_dash', 'unique:applications,slug'],
             'description' => ['nullable', 'string'],
@@ -52,13 +53,18 @@ class ApplicationController extends Controller
             'logo' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
             'allowed_scopes' => ['nullable', 'string'],
-            'allowed_user_types' => ['nullable', 'array'],
-            'allowed_user_types.*' => ['in:student,employee'],
             'roles' => ['nullable', 'array'],
             'roles.*' => ['exists:roles,id'],
-        ]);
+        ];
 
-        $application = Application::create([
+        if ($this->supportsAllowedUserTypes()) {
+            $validationRules['allowed_user_types'] = ['nullable', 'array'];
+            $validationRules['allowed_user_types.*'] = ['in:student,employee'];
+        }
+
+        $validated = $request->validate($validationRules);
+
+        $payload = [
             'name' => $validated['name'],
             'slug' => $validated['slug'] ?? Str::slug($validated['name']),
             'description' => $validated['description'] ?? null,
@@ -67,8 +73,13 @@ class ApplicationController extends Controller
             'logo' => $validated['logo'] ?? null,
             'is_active' => (bool) ($validated['is_active'] ?? false),
             'allowed_scopes' => $this->normalizeScopes($validated['allowed_scopes'] ?? null),
-            'allowed_user_types' => $this->normalizeUserTypes($validated['allowed_user_types'] ?? []),
-        ]);
+        ];
+
+        if ($this->supportsAllowedUserTypes()) {
+            $payload['allowed_user_types'] = $this->normalizeUserTypes($validated['allowed_user_types'] ?? []);
+        }
+
+        $application = Application::create($payload);
 
         $application->roles()->sync($validated['roles'] ?? []);
 
@@ -110,7 +121,7 @@ class ApplicationController extends Controller
 
     public function update(Request $request, Application $application): RedirectResponse
     {
-        $validated = $request->validate([
+        $validationRules = [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:applications,slug,' . $application->id],
             'description' => ['nullable', 'string'],
@@ -119,13 +130,18 @@ class ApplicationController extends Controller
             'logo' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
             'allowed_scopes' => ['nullable', 'string'],
-            'allowed_user_types' => ['nullable', 'array'],
-            'allowed_user_types.*' => ['in:student,employee'],
             'roles' => ['nullable', 'array'],
             'roles.*' => ['exists:roles,id'],
-        ]);
+        ];
 
-        $application->update([
+        if ($this->supportsAllowedUserTypes()) {
+            $validationRules['allowed_user_types'] = ['nullable', 'array'];
+            $validationRules['allowed_user_types.*'] = ['in:student,employee'];
+        }
+
+        $validated = $request->validate($validationRules);
+
+        $payload = [
             'name' => $validated['name'],
             'slug' => $validated['slug'],
             'description' => $validated['description'] ?? null,
@@ -134,8 +150,13 @@ class ApplicationController extends Controller
             'logo' => $validated['logo'] ?? null,
             'is_active' => (bool) ($validated['is_active'] ?? false),
             'allowed_scopes' => $this->normalizeScopes($validated['allowed_scopes'] ?? null),
-            'allowed_user_types' => $this->normalizeUserTypes($validated['allowed_user_types'] ?? []),
-        ]);
+        ];
+
+        if ($this->supportsAllowedUserTypes()) {
+            $payload['allowed_user_types'] = $this->normalizeUserTypes($validated['allowed_user_types'] ?? []);
+        }
+
+        $application->update($payload);
 
         $application->roles()->sync($validated['roles'] ?? []);
 
@@ -236,5 +257,10 @@ class ApplicationController extends Controller
             'student' => 'Student',
             'employee' => 'Employee',
         ];
+    }
+
+    private function supportsAllowedUserTypes(): bool
+    {
+        return Schema::hasColumn('applications', 'allowed_user_types');
     }
 }
