@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\ProgramStudy;
+use App\Models\SupportUnit;
 use App\Models\User;
 use App\Models\UserAffiliation;
 use App\Support\AuditLogger;
@@ -23,6 +24,7 @@ class UserAffiliationController extends Controller
             'cancelUrl' => route('departments.index'),
             'department' => $department,
             'programStudy' => null,
+            'supportUnit' => null,
             'users' => $this->userOptions(),
             'primaryHint' => 'Set this only when the department should become the user\'s primary affiliation. For students and lecturers, use the program study attach flow for primary affiliation.',
         ]);
@@ -116,9 +118,92 @@ class UserAffiliationController extends Controller
             'cancelUrl' => route('program-studies.index'),
             'department' => $programStudy->department,
             'programStudy' => $programStudy,
+            'supportUnit' => null,
             'users' => $this->userOptions(),
             'primaryHint' => 'If set as primary, the user\'s previous primary affiliation will be replaced.',
         ]);
+    }
+
+    public function createForSupportUnit(SupportUnit $supportUnit): View
+    {
+        return view('user-affiliations.create', [
+            'pageTitle' => 'Attach User to Support Unit',
+            'pageDescription' => 'Create a support unit affiliation for existing users.',
+            'submitUrl' => route('support-units.affiliations.store', $supportUnit),
+            'cancelUrl' => route('support-units.index'),
+            'department' => null,
+            'programStudy' => null,
+            'supportUnit' => $supportUnit,
+            'users' => $this->userOptions(),
+            'primaryHint' => 'If set as primary, the user\'s previous primary affiliation will be replaced.',
+        ]);
+    }
+
+    public function storeForSupportUnit(Request $request, SupportUnit $supportUnit): RedirectResponse
+    {
+        $validated = $request->validate([
+            'user_ids'   => ['required', 'array', 'min:1'],
+            'user_ids.*' => ['required', 'exists:users,id'],
+            'is_primary' => ['nullable', 'boolean'],
+        ]);
+
+        $isPrimary = (bool) ($validated['is_primary'] ?? false);
+        $users = User::query()->whereIn('id', $validated['user_ids'])->get();
+        $attached = 0;
+        $skipped = [];
+
+        foreach ($users as $user) {
+            $exists = UserAffiliation::query()
+                ->where('user_id', $user->id)
+                ->where('support_unit_id', $supportUnit->id)
+                ->whereNull('program_study_id')
+                ->exists();
+
+            if ($exists) {
+                $skipped[] = $user->email . ' (already attached)';
+                continue;
+            }
+
+            DB::transaction(function () use ($supportUnit, $user, $isPrimary) {
+                if ($isPrimary) {
+                    $user->affiliations()->update(['is_primary' => false]);
+                }
+
+                UserAffiliation::create([
+                    'user_id' => $user->id,
+                    'support_unit_id' => $supportUnit->id,
+                    'affiliation_type' => $this->resolveAffiliationType($user),
+                    'is_primary' => $isPrimary,
+                ]);
+            });
+
+            $attached++;
+        }
+
+        AuditLogger::log(
+            event: 'organization.management',
+            action: 'support_unit_affiliation_attached',
+            request: $request,
+            userId: $request->user()?->id,
+            targetType: SupportUnit::class,
+            targetId: $supportUnit->id,
+            targetLabel: $supportUnit->name,
+            metadata: [
+                'attached_count' => $attached,
+                'skipped' => $skipped,
+                'is_primary' => $isPrimary,
+            ]
+        );
+
+        $message = "Attached {$attached} user(s) to support unit.";
+        if (count($skipped) > 0) {
+            $message .= ' Skipped: ' . implode(', ', $skipped);
+        }
+
+        return redirect()->route('support-units.index')->with(
+            $attached > 0 ? 'success' : 'error',
+            $message
+        );
     }
 
     public function storeForProgramStudy(Request $request, ProgramStudy $programStudy): RedirectResponse

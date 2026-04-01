@@ -16,6 +16,12 @@
                     <div class="input">{{ $programStudy->name }}{{ $programStudy->academic_degree ? ' (' . $programStudy->academic_degree . ')' : '' }}</div>
                 </div>
             @endif
+            @if(isset($supportUnit) && $supportUnit)
+                <div>
+                    <div class="label">Support Unit</div>
+                    <div class="input">{{ $supportUnit->name }}</div>
+                </div>
+            @endif
         </div>
 
         <form method="POST" action="{{ $submitUrl }}">

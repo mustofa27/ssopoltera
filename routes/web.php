@@ -83,6 +83,8 @@ Route::middleware(['ip.policy', 'auth', 'active', 'idle.timeout', 'password.expi
         Route::get('/support-units', [SupportUnitController::class, 'index'])->name('support-units.index');
         Route::get('/support-units/create', [SupportUnitController::class, 'create'])->name('support-units.create');
         Route::post('/support-units', [SupportUnitController::class, 'store'])->name('support-units.store');
+        Route::get('/support-units/{supportUnit}/affiliations/create', [UserAffiliationController::class, 'createForSupportUnit'])->name('support-units.affiliations.create');
+        Route::post('/support-units/{supportUnit}/affiliations', [UserAffiliationController::class, 'storeForSupportUnit'])->name('support-units.affiliations.store');
         Route::get('/support-units/{supportUnit}/edit', [SupportUnitController::class, 'edit'])->name('support-units.edit');
         Route::put('/support-units/{supportUnit}', [SupportUnitController::class, 'update'])->name('support-units.update');
         Route::delete('/support-units/{supportUnit}', [SupportUnitController::class, 'destroy'])->name('support-units.destroy');

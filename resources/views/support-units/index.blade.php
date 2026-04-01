@@ -39,6 +39,7 @@
                             </td>
                             <td>{{ $supportUnit->user_affiliations_count }}</td>
                             <td>
+                                <a class="btn btn-secondary" href="{{ route('support-units.affiliations.create', $supportUnit) }}">Attach User</a>
                                 <a class="btn btn-secondary" href="{{ route('support-units.edit', $supportUnit) }}">Edit</a>
                                 <form method="POST" action="{{ route('support-units.destroy', $supportUnit) }}" class="inline-form" onsubmit="return confirm('Delete this support unit?')">
                                     @csrf
