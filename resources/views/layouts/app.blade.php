@@ -109,8 +109,26 @@
             padding: 8px 10px;
             border-radius: 8px;
             cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
         }
         .dropdown-item:hover { background: #f3f4f6; }
+        .dropdown-item:focus-visible {
+            outline: 2px solid #93c5fd;
+            outline-offset: 1px;
+        }
+        .dropdown-item-primary {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .dropdown-item-primary:hover { background: #dbeafe; }
+        .dropdown-item-icon { font-size: 14px; line-height: 1; }
         .app-shell.collapsed .sidebar { width: 76px; }
         .app-shell.collapsed .main-area { margin-left: 76px; }
         .app-shell.collapsed .sidebar-link { text-align: center; }
@@ -309,7 +327,10 @@
 
                         <div id="user-dropdown" class="user-dropdown">
                             <div class="dropdown-label">{{ auth()->user()->email }}</div>
-                            <a class="dropdown-item" href="{{ route('profile.edit') }}">My Profile</a>
+                            <a class="dropdown-item dropdown-item-primary" href="{{ route('profile.edit') }}">
+                                <span>My Profile</span>
+                                <span class="dropdown-item-icon" aria-hidden="true">→</span>
+                            </a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button class="dropdown-item" type="submit">Logout</button>
