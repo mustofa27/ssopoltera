@@ -126,12 +126,21 @@ class OAuthController extends Controller
     public function token(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'grant_type' => ['required', 'in:authorization_code'],
-            'code' => ['required', 'string'],
+            'grant_type' => ['required', 'in:authorization_code,refresh_token'],
             'client_id' => ['required', 'string', 'max:255'],
             'client_secret' => ['required', 'string', 'max:255'],
-            'redirect_uri' => ['required', 'url', 'max:255'],
         ]);
+
+        if ($validated['grant_type'] === 'authorization_code') {
+            $payload = $request->validate([
+                'code' => ['required', 'string'],
+                'redirect_uri' => ['required', 'url', 'max:255'],
+            ]);
+        } else {
+            $payload = $request->validate([
+                'refresh_token' => ['required', 'string'],
+            ]);
+        }
 
         $application = Application::query()
             ->where('client_id', $validated['client_id'])
@@ -142,12 +151,24 @@ class OAuthController extends Controller
             return response()->json(['error' => 'invalid_client'], 401);
         }
 
-        if ($application->redirect_uri !== $validated['redirect_uri']) {
+        if ($validated['grant_type'] === 'authorization_code') {
+            return $this->issueTokenFromAuthorizationCode($request, $application, $payload);
+        }
+
+        return $this->issueTokenFromRefreshToken($request, $application, $payload);
+    }
+
+    /**
+     * @param  array{code:string,redirect_uri:string}  $payload
+     */
+    private function issueTokenFromAuthorizationCode(Request $request, Application $application, array $payload): JsonResponse
+    {
+        if ($application->redirect_uri !== $payload['redirect_uri']) {
             return response()->json(['error' => 'invalid_grant', 'error_description' => 'Redirect URI mismatch.'], 400);
         }
 
         $authorizationCode = OAuthAuthorizationCode::query()
-            ->where('code', $validated['code'])
+            ->where('code', $payload['code'])
             ->where('application_id', $application->id)
             ->whereNull('used_at')
             ->first();
@@ -215,6 +236,84 @@ class OAuthController extends Controller
             'expires_in' => $accessTokenTtlMinutes * 60,
             'refresh_token' => $refreshToken,
             'scope' => implode(' ', $authorizationCode->scopes ?? []),
+        ]);
+    }
+
+    /**
+     * @param  array{refresh_token:string}  $payload
+     */
+    private function issueTokenFromRefreshToken(Request $request, Application $application, array $payload): JsonResponse
+    {
+        $session = SsoSession::query()
+            ->where('application_id', $application->id)
+            ->where('refresh_token', $payload['refresh_token'])
+            ->first();
+
+        if (! $session) {
+            return response()->json(['error' => 'invalid_grant'], 400);
+        }
+
+        $refreshTokenTtlMinutes = (int) config('security.sso.refresh_token_ttl_minutes', 43200);
+
+        if ($refreshTokenTtlMinutes > 0 && $session->created_at && $session->created_at->addMinutes($refreshTokenTtlMinutes)->isPast()) {
+            return response()->json(['error' => 'invalid_grant', 'error_description' => 'Refresh token expired.'], 400);
+        }
+
+        $authorizedUser = User::query()->find($session->user_id);
+
+        if (! $authorizedUser || ! $application->allowsUserType($authorizedUser->user_type)) {
+            AuditLogger::log(
+                event: 'oauth.token',
+                action: 'denied',
+                request: $request,
+                userId: $session->user_id,
+                targetType: Application::class,
+                targetId: $application->id,
+                targetLabel: $application->slug,
+                metadata: [
+                    'reason' => 'user_type_not_allowed',
+                    'user_type' => $authorizedUser?->user_type,
+                    'allowed_user_types' => $application->allowed_user_types,
+                    'grant_type' => 'refresh_token',
+                ]
+            );
+
+            return response()->json([
+                'error' => 'access_denied',
+                'error_description' => 'User type is not allowed for this application.',
+            ], 403);
+        }
+
+        $accessTokenTtlMinutes = (int) config('security.sso.access_token_ttl_minutes', 60);
+        $newAccessToken = Str::random(80);
+        $newRefreshToken = Str::random(80);
+
+        $session->update([
+            'access_token' => $newAccessToken,
+            'refresh_token' => $newRefreshToken,
+            'expires_at' => now()->addMinutes($accessTokenTtlMinutes),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'last_activity' => now(),
+        ]);
+
+        AuditLogger::log(
+            event: 'oauth.token',
+            action: 'refreshed',
+            request: $request,
+            userId: $session->user_id,
+            targetType: Application::class,
+            targetId: $application->id,
+            targetLabel: $application->slug,
+            metadata: ['session_id' => $session->id]
+        );
+
+        return response()->json([
+            'access_token' => $newAccessToken,
+            'token_type' => 'Bearer',
+            'expires_in' => $accessTokenTtlMinutes * 60,
+            'refresh_token' => $newRefreshToken,
+            'scope' => '',
         ]);
     }
 
