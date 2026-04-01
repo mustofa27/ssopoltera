@@ -33,20 +33,20 @@
     @if(! empty($importStatus) && is_array($importStatus))
         <div class="card mb-16" style="border-left:4px solid {{ ($importStatus['status'] ?? '') === 'failed' ? '#dc2626' : (($importStatus['status'] ?? '') === 'completed' ? '#16a34a' : '#2563eb') }};">
             <div class="row-between">
-                <div>
+                <div style="min-width:0; flex:1;">
                     @if(($importStatus['status'] ?? '') === 'running')
                         <div class="text-strong">Last import status: Running</div>
-                        <div class="muted text-sm mt-8">Started at {{ $importStatus['started_at'] ?? '-' }}. Refresh this page in a while to see the final summary.</div>
+                        <div class="muted text-sm mt-8" style="white-space:normal; overflow-wrap:anywhere; word-break:break-word;">Started at {{ $importStatus['started_at'] ?? '-' }}. Refresh this page in a while to see the final summary.</div>
                     @elseif(($importStatus['status'] ?? '') === 'completed')
                         @php $s = $importStatus['summary'] ?? []; @endphp
                         <div class="text-strong">Last import status: Completed</div>
-                        <div class="muted text-sm mt-8">
+                        <div class="muted text-sm mt-8" style="white-space:normal; overflow-wrap:anywhere; word-break:break-word;">
                             Total: {{ $s['total'] ?? 0 }}, Created: {{ $s['created'] ?? 0 }}, Updated: {{ $s['updated'] ?? 0 }}, Skipped: {{ $s['skipped'] ?? 0 }}, Failed: {{ $s['failed'] ?? 0 }}.
                             (Pages: {{ $s['pages_processed'] ?? 0 }}, Page size: {{ $s['config_page_size'] ?? 0 }}, Limit: {{ $s['config_limit'] ?? 0 }})
                         </div>
                     @else
                         <div class="text-strong">Last import status: Failed</div>
-                        <div class="muted text-sm mt-8">{{ $importStatus['error'] ?? 'Unexpected import error.' }}</div>
+                        <div class="muted text-sm mt-8" style="white-space:normal; overflow-wrap:anywhere; word-break:break-word;">{{ $importStatus['error'] ?? 'Unexpected import error.' }}</div>
                     @endif
                 </div>
                 <div class="badge {{ ($importStatus['status'] ?? '') === 'failed' ? 'badge-red' : (($importStatus['status'] ?? '') === 'completed' ? 'badge-green' : 'badge-blue') }}">
