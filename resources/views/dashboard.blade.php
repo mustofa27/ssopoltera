@@ -6,24 +6,26 @@
         <p class="muted">Welcome to the SSO portal.</p>
     </div>
 
-    <div class="grid">
-        <div class="card">
-            <h3 class="heading-top-reset">Users</h3>
-            <p class="text-xl mt-8">{{ $userCount }}</p>
-            <p class="muted mt-8">Active: {{ $activeUserCount }}</p>
+    @if($showAdminStats)
+        <div class="grid">
+            <div class="card">
+                <h3 class="heading-top-reset">Users</h3>
+                <p class="text-xl mt-8">{{ $userCount }}</p>
+                <p class="muted mt-8">Active: {{ $activeUserCount }}</p>
+            </div>
+            <div class="card">
+                <h3 class="heading-top-reset">Roles</h3>
+                <p class="text-xl mt-8">{{ $roleCount }}</p>
+            </div>
+            <div class="card">
+                <h3 class="heading-top-reset">Applications</h3>
+                <p class="text-xl mt-8">{{ $applicationCount }}</p>
+                <p class="muted mt-8">Accessible to you: {{ $accessibleApplicationCount }}</p>
+            </div>
         </div>
-        <div class="card">
-            <h3 class="heading-top-reset">Roles</h3>
-            <p class="text-xl mt-8">{{ $roleCount }}</p>
-        </div>
-        <div class="card">
-            <h3 class="heading-top-reset">Applications</h3>
-            <p class="text-xl mt-8">{{ $applicationCount }}</p>
-            <p class="muted mt-8">Accessible to you: {{ $accessibleApplicationCount }}</p>
-        </div>
-    </div>
+    @endif
 
-    <div class="card mt-28">
+    <div class="card {{ $showAdminStats ? 'mt-28' : '' }}">
         <div class="row-between mb-16">
             <div>
                 <h3 class="heading-top-reset">Registered Applications</h3>

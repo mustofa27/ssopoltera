@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Application;
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -13,6 +12,16 @@ class DashboardController extends Controller
     public function __invoke(): View
     {
         $currentUser = auth()->user();
+        $showAdminStats = $currentUser
+            ? (
+                $currentUser->hasPermission('manage_users')
+                || $currentUser->hasPermission('manage_roles')
+                || $currentUser->hasPermission('manage_applications')
+                || $currentUser->hasPermission('manage_sessions')
+                || $currentUser->hasPermission('view_audit_logs')
+            )
+            : false;
+
         $registeredApplications = Application::query()
             ->where('is_active', true)
             ->orderBy('name')
@@ -31,10 +40,11 @@ class DashboardController extends Controller
         $accessibleApplications = $availableApplications->filter(fn (Application $application) => (bool) $application->getAttribute('is_accessible'));
 
         return view('dashboard', [
-            'userCount' => User::count(),
-            'activeUserCount' => User::where('is_active', true)->count(),
-            'roleCount' => Role::count(),
-            'applicationCount' => Application::count(),
+            'showAdminStats' => $showAdminStats,
+            'userCount' => $showAdminStats ? User::count() : null,
+            'activeUserCount' => $showAdminStats ? User::where('is_active', true)->count() : null,
+            'roleCount' => $showAdminStats ? Role::count() : null,
+            'applicationCount' => $showAdminStats ? Application::count() : null,
             'availableApplications' => $availableApplications,
             'accessibleApplicationCount' => $accessibleApplications->count(),
         ]);
