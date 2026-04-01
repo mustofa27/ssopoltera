@@ -69,7 +69,8 @@ class MicrosoftProfileSyncService
                 return $summary;
             }
 
-            $users = $response->json('value', []);
+            $body = $response->json();
+            $users = is_array($body) ? ($body['value'] ?? []) : [];
 
             if (! is_array($users) || $users === []) {
                 $nextUrl = null;
@@ -91,7 +92,7 @@ class MicrosoftProfileSyncService
                 }
             }
 
-            $nextUrl = $response->json('@odata.nextLink');
+            $nextUrl = is_array($body) ? ($body['@odata.nextLink'] ?? null) : null;
             $nextUrl = is_string($nextUrl) && $nextUrl !== '' ? $nextUrl : null;
         }
 
