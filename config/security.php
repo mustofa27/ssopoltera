@@ -33,7 +33,7 @@ return [
         'timeout_seconds' => (int) env('SECURITY_PROFILE_SYNC_TIMEOUT_SECONDS', 10),
         'batch_limit' => (int) env('SECURITY_PROFILE_SYNC_BATCH_LIMIT', 200),
         'import_page_size' => (int) env('SECURITY_PROFILE_IMPORT_PAGE_SIZE', 100),
-        'import_limit' => (int) env('SECURITY_PROFILE_IMPORT_LIMIT', 500),
+        'import_limit' => (int) env('SECURITY_PROFILE_IMPORT_LIMIT', 1500),
         'import_include_guests' => (bool) env('SECURITY_PROFILE_IMPORT_INCLUDE_GUESTS', false),
         'import_default_role_slug' => (string) env('SECURITY_PROFILE_IMPORT_DEFAULT_ROLE', 'user'),
     ],
