@@ -7,7 +7,9 @@ use App\Support\AuditLogger;
 use App\Support\MicrosoftProfileSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
+use Throwable;
 
 class ProfileSyncController extends Controller
 {
@@ -36,33 +38,73 @@ class ProfileSyncController extends Controller
             'sync_errors' => User::whereNotNull('microsoft_sync_error')->count(),
         ];
 
-        return view('profile-sync.index', compact('users', 'stats', 'search'));
+        $importStatus = Cache::get($this->importStatusCacheKey($request->user()?->id));
+
+        return view('profile-sync.index', compact('users', 'stats', 'search', 'importStatus'));
     }
 
     public function importAll(Request $request, MicrosoftProfileSyncService $service): RedirectResponse
     {
-        $summary = $service->importAllMicrosoftUsers();
+        $userId = $request->user()?->id;
+        $cacheKey = $this->importStatusCacheKey($userId);
 
-        AuditLogger::log(
-            event: 'profile.sync',
-            action: 'import_all',
-            request: $request,
-            targetType: User::class,
-            metadata: $summary
-        );
+        Cache::put($cacheKey, [
+            'status' => 'running',
+            'started_at' => now()->toDateTimeString(),
+            'summary' => null,
+            'error' => null,
+        ], now()->addHours(2));
 
-        $flashType = $summary['failed'] > 0 && $summary['created'] === 0 && $summary['updated'] === 0
-            ? 'error'
-            : 'success';
+        dispatch(function () use ($cacheKey, $userId) {
+            try {
+                $summary = app(MicrosoftProfileSyncService::class)->importAllMicrosoftUsers();
+                $existingStatus = Cache::get($cacheKey);
+                $startedAt = is_array($existingStatus)
+                    ? ($existingStatus['started_at'] ?? now()->toDateTimeString())
+                    : now()->toDateTimeString();
 
-        $message = "Microsoft import complete. Total: {$summary['total']}, Created: {$summary['created']}, Updated: {$summary['updated']}, Skipped: {$summary['skipped']}, Failed: {$summary['failed']}.";
-        $message .= " (Pages: {$summary['pages_processed']}, Page size: {$summary['config_page_size']}, Limit: {$summary['config_limit']})";
+                Cache::put($cacheKey, [
+                    'status' => 'completed',
+                    'started_at' => $startedAt,
+                    'finished_at' => now()->toDateTimeString(),
+                    'summary' => $summary,
+                    'error' => null,
+                ], now()->addHours(2));
 
-        if (! empty($summary['message'])) {
-            $message .= ' ' . $summary['message'];
-        }
+                AuditLogger::log(
+                    event: 'profile.sync',
+                    action: 'import_all',
+                    request: null,
+                    userId: $userId,
+                    targetType: User::class,
+                    metadata: $summary
+                );
+            } catch (Throwable $e) {
+                $existingStatus = Cache::get($cacheKey);
+                $startedAt = is_array($existingStatus)
+                    ? ($existingStatus['started_at'] ?? now()->toDateTimeString())
+                    : now()->toDateTimeString();
 
-        return back()->with($flashType, $message);
+                Cache::put($cacheKey, [
+                    'status' => 'failed',
+                    'started_at' => $startedAt,
+                    'finished_at' => now()->toDateTimeString(),
+                    'summary' => null,
+                    'error' => $e->getMessage(),
+                ], now()->addHours(2));
+
+                AuditLogger::log(
+                    event: 'profile.sync',
+                    action: 'import_all_failed',
+                    request: null,
+                    userId: $userId,
+                    targetType: User::class,
+                    metadata: ['error' => $e->getMessage()]
+                );
+            }
+        })->afterResponse();
+
+        return back()->with('success', 'Microsoft import started in background. You can continue using this page and refresh to see final results.');
     }
 
     public function syncAll(Request $request, MicrosoftProfileSyncService $service): RedirectResponse
@@ -99,5 +141,10 @@ class ProfileSyncController extends Controller
         }
 
         return back()->with('error', "{$user->email}: {$result['message']}");
+    }
+
+    private function importStatusCacheKey(?int $userId): string
+    {
+        return 'profile-sync:microsoft-import-status:' . ($userId ?? 'guest');
     }
 }

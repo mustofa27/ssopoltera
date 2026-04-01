@@ -42,7 +42,7 @@ class MicrosoftProfileSyncService
             return $summary;
         }
 
-        $configuredImportLimit = (int) config('security.profile_sync.import_limit', 500);
+        $configuredImportLimit = (int) config('security.profile_sync.import_limit', 1500);
         $remaining = $configuredImportLimit > 0 ? $configuredImportLimit : -1;
         $nextUrl = $this->buildMicrosoftUsersImportUrl();
         $defaultRole = Role::query()
