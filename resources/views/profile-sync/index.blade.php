@@ -8,15 +8,25 @@
                 <p class="muted mt-8">Import tenant users and synchronize local Microsoft-linked profiles from Microsoft Graph.</p>
             </div>
             <div class="form-inline">
-                <form method="POST" action="{{ \Illuminate\Support\Facades\Route::has('profile-sync.import-all') ? route('profile-sync.import-all') : url('/profile-sync/import-all') }}" onsubmit="return confirm('Import users from Microsoft 365 into the local directory? This will create or update local accounts.')">
+                <form id="import-all-form" method="POST" action="{{ \Illuminate\Support\Facades\Route::has('profile-sync.import-all') ? route('profile-sync.import-all') : url('/profile-sync/import-all') }}" onsubmit="return confirm('Import users from Microsoft 365 into the local directory? This will create or update local accounts.')">
                     @csrf
-                    <button class="btn" type="submit">Import All Tenant Users</button>
+                    <button id="import-all-button" class="btn" type="submit">Import All Tenant Users</button>
                 </form>
                 <form method="POST" action="{{ route('profile-sync.sync-all') }}" onsubmit="return confirm('Run synchronization for all Microsoft-linked users?')">
                     @csrf
-                    <button class="btn btn-secondary" type="submit">Sync All Linked Users</button>
+                    <button class="btn btn-secondary" type="submit" data-profile-sync-top-action="1">Sync All Linked Users</button>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <div id="import-loading-state" class="card mb-16" style="display:none; border-left:4px solid #2563eb;">
+        <div class="row-between">
+            <div>
+                <div class="text-strong">Import in progress<span id="import-loading-dots">.</span></div>
+                <div class="muted text-sm mt-8">Please wait. This page will refresh automatically after Microsoft import completes.</div>
+            </div>
+            <div class="badge badge-blue">Running</div>
         </div>
     </div>
 
@@ -97,4 +107,42 @@
 
         <div class="mt-14">{{ $users->links() }}</div>
     </div>
+
+    <script>
+        (function () {
+            const importForm = document.getElementById('import-all-form');
+            const importButton = document.getElementById('import-all-button');
+            const loadingCard = document.getElementById('import-loading-state');
+            const loadingDots = document.getElementById('import-loading-dots');
+
+            if (!importForm || !importButton || !loadingCard || !loadingDots) {
+                return;
+            }
+
+            let dots = 1;
+            let dotTimer = null;
+
+            importForm.addEventListener('submit', function () {
+                importButton.disabled = true;
+                importButton.textContent = 'Importing...';
+
+                document.querySelectorAll('[data-profile-sync-top-action="1"]').forEach(function (button) {
+                    button.disabled = true;
+                });
+
+                loadingCard.style.display = 'block';
+
+                dotTimer = window.setInterval(function () {
+                    dots = dots >= 3 ? 1 : dots + 1;
+                    loadingDots.textContent = '.'.repeat(dots);
+                }, 500);
+
+                window.setTimeout(function () {
+                    if (dotTimer) {
+                        window.clearInterval(dotTimer);
+                    }
+                }, 180000);
+            });
+        })();
+    </script>
 @endsection
