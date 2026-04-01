@@ -4,6 +4,10 @@
     <div class="card">
         <h2 class="heading-top-reset">Edit Application</h2>
 
+        <form id="regenerate-secret-form" method="POST" action="{{ route('applications.regenerate-secret', $application) }}" onsubmit="return confirm('Regenerate the client secret? The old secret will stop working immediately.');">
+            @csrf
+        </form>
+
         <form method="POST" action="{{ route('applications.update', $application) }}">
             @csrf
             @method('PUT')
@@ -98,10 +102,7 @@
                         <input class="input" id="client_secret_display" type="password" value="{{ $application->client_secret }}" readonly>
                         <button class="btn btn-secondary" type="button" onclick="toggleSecret('client_secret_display', this)">Show</button>
                         <button class="btn btn-secondary" type="button" onclick="copyCredential('client_secret_display')">Copy</button>
-                        <form method="POST" action="{{ route('applications.regenerate-secret', $application) }}" onsubmit="return confirm('Regenerate the client secret? The old secret will stop working immediately.');">
-                            @csrf
-                            <button class="btn btn-warning" type="submit">Regenerate</button>
-                        </form>
+                        <button class="btn btn-warning" type="submit" form="regenerate-secret-form">Regenerate</button>
                     </div>
                 </div>
             </div>

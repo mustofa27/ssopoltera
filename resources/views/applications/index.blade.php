@@ -21,6 +21,7 @@
                         <th>Name</th>
                         <th>Client ID</th>
                         <th>Redirect URI</th>
+                        <th>Allowed User Type</th>
                         <th>Roles</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -35,6 +36,15 @@
                             </td>
                             <td><span class="muted">{{ \Illuminate\Support\Str::limit($application->client_id, 18) }}</span></td>
                             <td><span class="muted">{{ \Illuminate\Support\Str::limit($application->redirect_uri, 38) }}</span></td>
+                            <td>
+                                @if(!empty($application->allowed_user_types))
+                                    @foreach($application->allowed_user_types as $userType)
+                                        <span class="badge badge-blue">{{ ucfirst($userType) }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="muted">All user types</span>
+                                @endif
+                            </td>
                             <td>{{ $application->roles_count }}</td>
                             <td>
                                 @if($application->is_active)
@@ -55,7 +65,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="muted">No applications found.</td>
+                            <td colspan="7" class="muted">No applications found.</td>
                         </tr>
                     @endforelse
                 </tbody>
