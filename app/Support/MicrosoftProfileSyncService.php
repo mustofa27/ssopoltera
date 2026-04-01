@@ -25,7 +25,7 @@ class MicrosoftProfileSyncService
             'message' => null,
             'pages_processed' => 0,
             'config_page_size' => (int) config('security.profile_sync.import_page_size', 100),
-            'config_limit' => (int) config('security.profile_sync.import_limit', 500),
+            'config_limit' => (int) config('security.profile_sync.import_limit', 1500),
         ];
 
         if (! config('security.profile_sync.import_enabled', true)) {
