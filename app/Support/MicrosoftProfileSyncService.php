@@ -212,7 +212,9 @@ class MicrosoftProfileSyncService
         }
 
         $response = Http::asForm()
-            ->timeout((int) config('security.profile_sync.timeout_seconds', 10))
+            ->connectTimeout($this->connectTimeoutSeconds())
+            ->timeout($this->requestTimeoutSeconds())
+            ->retry($this->requestRetryAttempts(), $this->requestRetrySleepMs(), throw: false)
             ->post("https://login.microsoftonline.com/{$tenantId}/oauth2/v2.0/token", [
                 'client_id' => $clientId,
                 'client_secret' => $clientSecret,
@@ -232,7 +234,9 @@ class MicrosoftProfileSyncService
         $baseUrl = rtrim((string) config('security.profile_sync.graph_base_url', 'https://graph.microsoft.com/v1.0'), '/');
 
         return Http::withToken($accessToken)
-            ->timeout((int) config('security.profile_sync.timeout_seconds', 10))
+            ->connectTimeout($this->connectTimeoutSeconds())
+            ->timeout($this->requestTimeoutSeconds())
+            ->retry($this->requestRetryAttempts(), $this->requestRetrySleepMs(), throw: false)
             ->acceptJson()
             ->get("{$baseUrl}/users/{$microsoftId}", [
                 '$select' => 'id,displayName,mail,userPrincipalName,department,jobTitle',
@@ -250,9 +254,33 @@ class MicrosoftProfileSyncService
     private function fetchMicrosoftUsersPage(string $accessToken, string $nextUrl): Response
     {
         return Http::withToken($accessToken)
-            ->timeout((int) config('security.profile_sync.timeout_seconds', 10))
+            ->connectTimeout($this->connectTimeoutSeconds())
+            ->timeout($this->requestTimeoutSeconds())
+            ->retry($this->requestRetryAttempts(), $this->requestRetrySleepMs(), throw: false)
             ->acceptJson()
             ->get($nextUrl);
+    }
+
+    private function requestTimeoutSeconds(): int
+    {
+        return max(10, (int) config('security.profile_sync.timeout_seconds', 30));
+    }
+
+    private function connectTimeoutSeconds(): int
+    {
+        $timeout = $this->requestTimeoutSeconds();
+
+        return max(5, min(15, $timeout));
+    }
+
+    private function requestRetryAttempts(): int
+    {
+        return max(0, (int) config('security.profile_sync.retry_attempts', 2));
+    }
+
+    private function requestRetrySleepMs(): int
+    {
+        return max(100, (int) config('security.profile_sync.retry_sleep_ms', 500));
     }
 
     private function upsertMicrosoftUser(mixed $payload, ?Role $defaultRole): string
