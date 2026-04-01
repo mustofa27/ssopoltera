@@ -309,6 +309,7 @@
 
                         <div id="user-dropdown" class="user-dropdown">
                             <div class="dropdown-label">{{ auth()->user()->email }}</div>
+                            <a class="dropdown-item" href="{{ route('profile.edit') }}">My Profile</a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button class="dropdown-item" type="submit">Logout</button>

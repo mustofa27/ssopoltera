@@ -7,6 +7,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\MicrosoftAuthController;
 use App\Http\Controllers\OAuthController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileSyncController;
 use App\Http\Controllers\ProgramStudyController;
 use App\Http\Controllers\RoleController;
@@ -53,6 +54,10 @@ Route::match(['GET', 'POST'], '/oauth/userinfo', [OAuthController::class, 'useri
 
 Route::middleware(['ip.policy', 'auth', 'active', 'idle.timeout', 'password.expiry'])->group(function () {
     Route::get('/admin', DashboardController::class)->name('dashboard');
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
 
     Route::middleware('permission:manage_users')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
