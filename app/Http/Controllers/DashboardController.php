@@ -27,11 +27,16 @@ class DashboardController extends Controller
             ->orderBy('name')
             ->get();
 
-        $availableApplications = $registeredApplications->map(function (Application $application) use ($currentUser) {
-            $application->setAttribute('is_accessible', $currentUser ? $application->isAccessibleToUser($currentUser) : false);
+        $availableApplications = $registeredApplications
+            ->filter(function (Application $application) use ($currentUser) {
+                return $currentUser ? $application->allowsUserType($currentUser->user_type) : false;
+            })
+            ->map(function (Application $application) use ($currentUser) {
+                $application->setAttribute('is_accessible', $currentUser ? $application->isAccessibleToUser($currentUser) : false);
 
-            return $application;
-        });
+                return $application;
+            })
+            ->values();
 
         $accessibleApplications = $availableApplications->filter(fn (Application $application) => (bool) $application->getAttribute('is_accessible'));
 
