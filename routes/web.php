@@ -61,6 +61,7 @@ Route::middleware(['ip.policy', 'auth', 'active', 'idle.timeout', 'password.expi
 
     Route::middleware('permission:manage_users')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/search', [UserController::class, 'search'])->name('users.search');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');

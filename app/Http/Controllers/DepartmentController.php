@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
-use App\Models\User;
 use App\Support\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,11 +33,7 @@ class DepartmentController extends Controller
 
     public function create(): View
     {
-        $headCandidates = User::query()
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
-
-        return view('departments.create', compact('headCandidates'));
+        return view('departments.create');
     }
 
     public function store(Request $request): RedirectResponse
@@ -73,11 +68,9 @@ class DepartmentController extends Controller
 
     public function edit(Department $department): View
     {
-        $headCandidates = User::query()
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
+        $department->load('head:id,name,email');
 
-        return view('departments.edit', compact('department', 'headCandidates'));
+        return view('departments.edit', compact('department'));
     }
 
     public function update(Request $request, Department $department): RedirectResponse

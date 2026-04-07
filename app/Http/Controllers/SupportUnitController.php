@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\SupportUnit;
-use App\Models\User;
 use App\Support\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,11 +33,7 @@ class SupportUnitController extends Controller
 
     public function create(): View
     {
-        $headCandidates = User::query()
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
-
-        return view('support-units.create', compact('headCandidates'));
+        return view('support-units.create');
     }
 
     public function store(Request $request): RedirectResponse
@@ -71,11 +66,9 @@ class SupportUnitController extends Controller
 
     public function edit(SupportUnit $supportUnit): View
     {
-        $headCandidates = User::query()
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
+        $supportUnit->load('head:id,name,email');
 
-        return view('support-units.edit', compact('supportUnit', 'headCandidates'));
+        return view('support-units.edit', compact('supportUnit'));
     }
 
     public function update(Request $request, SupportUnit $supportUnit): RedirectResponse

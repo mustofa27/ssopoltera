@@ -219,6 +219,36 @@
         .checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 28px; }
         .choice-group { display: flex; gap: 12px; flex-wrap: wrap; }
         .choice-item { display: flex; align-items: center; gap: 6px; }
+        .user-picker { position: relative; }
+        .user-picker-results {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            z-index: 20;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            display: none;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .user-picker-results.show { display: block; }
+        .user-picker-option {
+            width: 100%;
+            border: 0;
+            background: #fff;
+            text-align: left;
+            padding: 8px 10px;
+            cursor: pointer;
+        }
+        .user-picker-option:hover { background: #f3f4f6; }
+        .user-picker-empty {
+            padding: 8px 10px;
+            color: #6b7280;
+            font-size: 13px;
+        }
         .text-strong { font-weight: 600; }
         .text-xs { font-size: 12px; }
         .text-sm { font-size: 13px; }
@@ -432,6 +462,115 @@
                 }
             });
         }
+
+        function initUserPickers() {
+            const pickers = document.querySelectorAll('.js-user-picker');
+
+            pickers.forEach((picker) => {
+                const url = picker.getAttribute('data-search-url');
+                const input = picker.querySelector('.js-user-search');
+                const hidden = picker.querySelector('.js-user-id');
+                const results = picker.querySelector('.js-user-results');
+
+                if (! url || ! input || ! hidden || ! results) {
+                    return;
+                }
+
+                input.dataset.selectedLabel = input.value;
+                let timerId;
+                let activeRequest;
+
+                const closeResults = () => {
+                    results.classList.remove('show');
+                };
+
+                const renderResults = (items) => {
+                    if (! items.length) {
+                        results.innerHTML = '<div class="user-picker-empty">No users found.</div>';
+                        results.classList.add('show');
+                        return;
+                    }
+
+                    results.innerHTML = items.map((item) => (
+                        `<button type="button" class="user-picker-option" data-id="${item.id}" data-label="${item.label}">${item.label}</button>`
+                    )).join('');
+
+                    results.classList.add('show');
+                };
+
+                const searchUsers = (term) => {
+                    if (activeRequest) {
+                        activeRequest.abort();
+                    }
+
+                    const controller = new AbortController();
+                    activeRequest = controller;
+
+                    fetch(`${url}?q=${encodeURIComponent(term)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        signal: controller.signal,
+                    })
+                        .then((response) => response.ok ? response.json() : { data: [] })
+                        .then((payload) => {
+                            if (controller.signal.aborted) {
+                                return;
+                            }
+
+                            renderResults(Array.isArray(payload.data) ? payload.data : []);
+                        })
+                        .catch((error) => {
+                            if (error.name !== 'AbortError') {
+                                closeResults();
+                            }
+                        });
+                };
+
+                input.addEventListener('input', () => {
+                    const value = input.value.trim();
+
+                    if (value !== input.dataset.selectedLabel) {
+                        hidden.value = '';
+                    }
+
+                    clearTimeout(timerId);
+
+                    if (value.length < 2) {
+                        closeResults();
+                        return;
+                    }
+
+                    timerId = setTimeout(() => searchUsers(value), 180);
+                });
+
+                results.addEventListener('click', (event) => {
+                    const option = event.target.closest('.user-picker-option');
+
+                    if (! option) {
+                        return;
+                    }
+
+                    const selectedId = option.getAttribute('data-id') ?? '';
+                    const selectedLabel = option.getAttribute('data-label') ?? '';
+
+                    hidden.value = selectedId;
+                    input.value = selectedLabel;
+                    input.dataset.selectedLabel = selectedLabel;
+                    closeResults();
+                });
+
+                document.addEventListener('click', (event) => {
+                    if (! picker.contains(event.target)) {
+                        closeResults();
+                    }
+                });
+            });
+        }
+
+        initUserPickers();
     </script>
 </body>
 </html>

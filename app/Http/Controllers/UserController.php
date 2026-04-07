@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\SupportUnit;
 use App\Models\User;
 use App\Support\AuditLogger;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -21,6 +22,35 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
+    public function search(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->query('q', ''));
+
+        if (mb_strlen($query) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $users = User::query()
+            ->select(['id', 'name', 'email'])
+            ->where(function ($innerQuery) use ($query) {
+                $innerQuery
+                    ->where('name', 'like', "%{$query}%")
+                    ->orWhere('email', 'like', "%{$query}%");
+            })
+            ->orderBy('name')
+            ->limit(15)
+            ->get()
+            ->map(fn (User $user): array => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'label' => $user->name . ' (' . $user->email . ')',
+            ])
+            ->values();
+
+        return response()->json(['data' => $users]);
+    }
+
     public function index(Request $request): View
     {
         $search = trim((string) $request->query('q', ''));

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\ProgramStudy;
-use App\Models\User;
 use App\Support\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,11 +36,8 @@ class ProgramStudyController extends Controller
     public function create(): View
     {
         $departments = Department::orderBy('name')->get();
-        $headCandidates = User::query()
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
 
-        return view('program-studies.create', compact('departments', 'headCandidates'));
+        return view('program-studies.create', compact('departments'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -79,11 +75,9 @@ class ProgramStudyController extends Controller
     public function edit(ProgramStudy $programStudy): View
     {
         $departments = Department::orderBy('name')->get();
-        $headCandidates = User::query()
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
+        $programStudy->load('head:id,name,email');
 
-        return view('program-studies.edit', compact('programStudy', 'departments', 'headCandidates'));
+        return view('program-studies.edit', compact('programStudy', 'departments'));
     }
 
     public function update(Request $request, ProgramStudy $programStudy): RedirectResponse

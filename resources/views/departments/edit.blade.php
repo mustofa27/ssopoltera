@@ -19,12 +19,12 @@
                 </div>
                 <div>
                     <label class="label" for="head_user_id">Head of Department</label>
-                    <select class="input" id="head_user_id" name="head_user_id">
-                        <option value="">Select head (optional)</option>
-                        @foreach($headCandidates as $headCandidate)
-                            <option value="{{ $headCandidate->id }}" {{ (string) old('head_user_id', $department->head_user_id) === (string) $headCandidate->id ? 'selected' : '' }}>{{ $headCandidate->name }} ({{ $headCandidate->email }})</option>
-                        @endforeach
-                    </select>
+                    <div class="user-picker js-user-picker" data-search-url="{{ route('users.search') }}">
+                        <input class="input js-user-search" id="head_user_search" type="text" name="head_user_query" value="{{ old('head_user_query', $department->head ? $department->head->name . ' (' . $department->head->email . ')' : '') }}" placeholder="Type name or email to search">
+                        <input class="js-user-id" id="head_user_id" type="hidden" name="head_user_id" value="{{ old('head_user_id', $department->head_user_id) }}">
+                        <div class="user-picker-results js-user-results"></div>
+                    </div>
+                    <div class="muted text-xs mt-4">Type at least 2 characters, then pick a user from the list.</div>
                 </div>
                 <div class="checkbox-row">
                     <input type="checkbox" id="is_active" name="is_active" value="1" {{ old('is_active', $department->is_active) ? 'checked' : '' }}>
