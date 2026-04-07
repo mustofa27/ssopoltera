@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SupportUnit;
+use App\Models\User;
 use App\Support\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,7 @@ class SupportUnitController extends Controller
         $search = trim((string) $request->query('q', ''));
 
         $supportUnits = SupportUnit::query()
+            ->with('head:id,name,email')
             ->withCount('userAffiliations')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($innerQuery) use ($search) {
@@ -32,7 +34,11 @@ class SupportUnitController extends Controller
 
     public function create(): View
     {
-        return view('support-units.create');
+        $headCandidates = User::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
+        return view('support-units.create', compact('headCandidates'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -40,12 +46,14 @@ class SupportUnitController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', 'unique:support_units,code'],
             'name' => ['required', 'string', 'max:255'],
+            'head_user_id' => ['nullable', 'exists:users,id'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         $supportUnit = SupportUnit::create([
             'code' => strtoupper($validated['code']),
             'name' => $validated['name'],
+            'head_user_id' => $validated['head_user_id'] ?? null,
             'is_active' => (bool) ($validated['is_active'] ?? false),
         ]);
 
@@ -63,7 +71,11 @@ class SupportUnitController extends Controller
 
     public function edit(SupportUnit $supportUnit): View
     {
-        return view('support-units.edit', compact('supportUnit'));
+        $headCandidates = User::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
+        return view('support-units.edit', compact('supportUnit', 'headCandidates'));
     }
 
     public function update(Request $request, SupportUnit $supportUnit): RedirectResponse
@@ -71,12 +83,14 @@ class SupportUnitController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', 'unique:support_units,code,' . $supportUnit->id],
             'name' => ['required', 'string', 'max:255'],
+            'head_user_id' => ['nullable', 'exists:users,id'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         $supportUnit->update([
             'code' => strtoupper($validated['code']),
             'name' => $validated['name'],
+            'head_user_id' => $validated['head_user_id'] ?? null,
             'is_active' => (bool) ($validated['is_active'] ?? false),
         ]);
 

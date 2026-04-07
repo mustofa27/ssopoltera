@@ -15,6 +15,7 @@ class ProgramStudy extends Model
         'department_id',
         'code',
         'name',
+        'head_user_id',
         'academic_degree',
         'is_active',
     ];
@@ -31,5 +32,10 @@ class ProgramStudy extends Model
     public function userAffiliations(): HasMany
     {
         return $this->hasMany(UserAffiliation::class);
+    }
+
+    public function head(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'head_user_id');
     }
 }

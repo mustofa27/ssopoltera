@@ -21,6 +21,7 @@
                         <th>Code</th>
                         <th>Name</th>
                         <th>Department</th>
+                        <th>Head</th>
                         <th>Academic Degree</th>
                         <th>Status</th>
                         <th>Affiliations</th>
@@ -33,6 +34,7 @@
                             <td>{{ $programStudy->code }}</td>
                             <td>{{ $programStudy->name }}</td>
                             <td>{{ $programStudy->department?->name }}</td>
+                            <td>{{ $programStudy->head?->name ?: '—' }}</td>
                             <td>{{ $programStudy->academic_degree ?: '—' }}</td>
                             <td>
                                 @if($programStudy->is_active)
@@ -54,7 +56,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="muted">No program studies found.</td>
+                            <td colspan="8" class="muted">No program studies found.</td>
                         </tr>
                     @endforelse
                 </tbody>

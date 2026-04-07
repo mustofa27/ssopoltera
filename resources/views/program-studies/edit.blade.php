@@ -27,6 +27,15 @@
                     <input class="input" id="name" type="text" name="name" value="{{ old('name', $programStudy->name) }}" required>
                 </div>
                 <div>
+                    <label class="label" for="head_user_id">Head of Program Study</label>
+                    <select class="input" id="head_user_id" name="head_user_id">
+                        <option value="">Select head (optional)</option>
+                        @foreach($headCandidates as $headCandidate)
+                            <option value="{{ $headCandidate->id }}" {{ (string) old('head_user_id', $programStudy->head_user_id) === (string) $headCandidate->id ? 'selected' : '' }}>{{ $headCandidate->name }} ({{ $headCandidate->email }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
                     <label class="label" for="academic_degree">Academic Degree</label>
                     <input class="input" id="academic_degree" type="text" name="academic_degree" value="{{ old('academic_degree', $programStudy->academic_degree) }}" placeholder="e.g. D3, S1, S2">
                 </div>

@@ -17,6 +17,15 @@
                     <label class="label" for="name">Name</label>
                     <input class="input" id="name" type="text" name="name" value="{{ old('name', $department->name) }}" required>
                 </div>
+                <div>
+                    <label class="label" for="head_user_id">Head of Department</label>
+                    <select class="input" id="head_user_id" name="head_user_id">
+                        <option value="">Select head (optional)</option>
+                        @foreach($headCandidates as $headCandidate)
+                            <option value="{{ $headCandidate->id }}" {{ (string) old('head_user_id', $department->head_user_id) === (string) $headCandidate->id ? 'selected' : '' }}>{{ $headCandidate->name }} ({{ $headCandidate->email }})</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="checkbox-row">
                     <input type="checkbox" id="is_active" name="is_active" value="1" {{ old('is_active', $department->is_active) ? 'checked' : '' }}>
                     <label for="is_active">Active</label>

@@ -20,6 +20,7 @@
                     <tr>
                         <th>Code</th>
                         <th>Name</th>
+                        <th>Head</th>
                         <th>Status</th>
                         <th>Programs</th>
                         <th>Affiliations</th>
@@ -31,6 +32,7 @@
                         <tr>
                             <td>{{ $department->code }}</td>
                             <td>{{ $department->name }}</td>
+                            <td>{{ $department->head?->name ?: '—' }}</td>
                             <td>
                                 @if($department->is_active)
                                     <span class="badge badge-green">Active</span>
@@ -52,7 +54,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="muted">No departments found.</td>
+                            <td colspan="7" class="muted">No departments found.</td>
                         </tr>
                     @endforelse
                 </tbody>

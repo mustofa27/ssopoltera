@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\ProgramStudy;
+use App\Models\User;
 use App\Support\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class ProgramStudyController extends Controller
         $search = trim((string) $request->query('q', ''));
 
         $programStudies = ProgramStudy::query()
-            ->with(['department'])
+            ->with(['department', 'head:id,name,email'])
             ->withCount('userAffiliations')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($innerQuery) use ($search) {
@@ -36,8 +37,11 @@ class ProgramStudyController extends Controller
     public function create(): View
     {
         $departments = Department::orderBy('name')->get();
+        $headCandidates = User::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
 
-        return view('program-studies.create', compact('departments'));
+        return view('program-studies.create', compact('departments', 'headCandidates'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -46,6 +50,7 @@ class ProgramStudyController extends Controller
             'department_id' => ['required', 'exists:departments,id'],
             'code' => ['required', 'string', 'max:50', 'unique:program_studies,code'],
             'name' => ['required', 'string', 'max:255'],
+            'head_user_id' => ['nullable', 'exists:users,id'],
             'academic_degree' => ['nullable', 'string', 'max:50'],
             'is_active' => ['nullable', 'boolean'],
         ]);
@@ -54,6 +59,7 @@ class ProgramStudyController extends Controller
             'department_id' => $validated['department_id'],
             'code' => strtoupper($validated['code']),
             'name' => $validated['name'],
+            'head_user_id' => $validated['head_user_id'] ?? null,
             'academic_degree' => $validated['academic_degree'] ?? null,
             'is_active' => (bool) ($validated['is_active'] ?? false),
         ]);
@@ -73,8 +79,11 @@ class ProgramStudyController extends Controller
     public function edit(ProgramStudy $programStudy): View
     {
         $departments = Department::orderBy('name')->get();
+        $headCandidates = User::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
 
-        return view('program-studies.edit', compact('programStudy', 'departments'));
+        return view('program-studies.edit', compact('programStudy', 'departments', 'headCandidates'));
     }
 
     public function update(Request $request, ProgramStudy $programStudy): RedirectResponse
@@ -83,6 +92,7 @@ class ProgramStudyController extends Controller
             'department_id' => ['required', 'exists:departments,id'],
             'code' => ['required', 'string', 'max:50', 'unique:program_studies,code,' . $programStudy->id],
             'name' => ['required', 'string', 'max:255'],
+            'head_user_id' => ['nullable', 'exists:users,id'],
             'academic_degree' => ['nullable', 'string', 'max:50'],
             'is_active' => ['nullable', 'boolean'],
         ]);
@@ -91,6 +101,7 @@ class ProgramStudyController extends Controller
             'department_id' => $validated['department_id'],
             'code' => strtoupper($validated['code']),
             'name' => $validated['name'],
+            'head_user_id' => $validated['head_user_id'] ?? null,
             'academic_degree' => $validated['academic_degree'] ?? null,
             'is_active' => (bool) ($validated['is_active'] ?? false),
         ]);

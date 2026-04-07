@@ -20,6 +20,7 @@
                     <tr>
                         <th>Code</th>
                         <th>Name</th>
+                        <th>Head</th>
                         <th>Status</th>
                         <th>Affiliations</th>
                         <th>Actions</th>
@@ -30,6 +31,7 @@
                         <tr>
                             <td>{{ $supportUnit->code }}</td>
                             <td>{{ $supportUnit->name }}</td>
+                            <td>{{ $supportUnit->head?->name ?: '—' }}</td>
                             <td>
                                 @if($supportUnit->is_active)
                                     <span class="badge badge-green">Active</span>
@@ -50,7 +52,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="muted">No support units found.</td>
+                            <td colspan="6" class="muted">No support units found.</td>
                         </tr>
                     @endforelse
                 </tbody>

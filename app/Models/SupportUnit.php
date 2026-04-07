@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupportUnit extends Model
@@ -13,6 +14,7 @@ class SupportUnit extends Model
     protected $fillable = [
         'code',
         'name',
+        'head_user_id',
         'is_active',
     ];
 
@@ -23,5 +25,10 @@ class SupportUnit extends Model
     public function userAffiliations(): HasMany
     {
         return $this->hasMany(UserAffiliation::class);
+    }
+
+    public function head(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'head_user_id');
     }
 }

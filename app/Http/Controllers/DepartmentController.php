@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
+use App\Models\User;
 use App\Support\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,7 @@ class DepartmentController extends Controller
         $search = trim((string) $request->query('q', ''));
 
         $departments = Department::query()
+            ->with('head:id,name,email')
             ->withCount(['programStudies', 'userAffiliations'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($innerQuery) use ($search) {
@@ -32,7 +34,11 @@ class DepartmentController extends Controller
 
     public function create(): View
     {
-        return view('departments.create');
+        $headCandidates = User::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
+        return view('departments.create', compact('headCandidates'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -40,12 +46,14 @@ class DepartmentController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', 'unique:departments,code'],
             'name' => ['required', 'string', 'max:255'],
+            'head_user_id' => ['nullable', 'exists:users,id'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         Department::create([
             'code' => strtoupper($validated['code']),
             'name' => $validated['name'],
+            'head_user_id' => $validated['head_user_id'] ?? null,
             'is_active' => (bool) ($validated['is_active'] ?? false),
         ]);
 
@@ -65,7 +73,11 @@ class DepartmentController extends Controller
 
     public function edit(Department $department): View
     {
-        return view('departments.edit', compact('department'));
+        $headCandidates = User::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
+        return view('departments.edit', compact('department', 'headCandidates'));
     }
 
     public function update(Request $request, Department $department): RedirectResponse
@@ -73,12 +85,14 @@ class DepartmentController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', 'unique:departments,code,' . $department->id],
             'name' => ['required', 'string', 'max:255'],
+            'head_user_id' => ['nullable', 'exists:users,id'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         $department->update([
             'code' => strtoupper($validated['code']),
             'name' => $validated['name'],
+            'head_user_id' => $validated['head_user_id'] ?? null,
             'is_active' => (bool) ($validated['is_active'] ?? false),
         ]);
 
