@@ -395,15 +395,20 @@ class UserController extends Controller
             return;
         }
 
-        $idsToDelete = DB::table('user_password_histories')
+        $idsToKeep = DB::table('user_password_histories')
             ->where('user_id', $user->id)
             ->orderByDesc('id')
-            ->skip($historyCount)
+            ->limit($historyCount)
             ->pluck('id');
 
-        if ($idsToDelete->isNotEmpty()) {
-            DB::table('user_password_histories')->whereIn('id', $idsToDelete)->delete();
+        if ($idsToKeep->isEmpty()) {
+            return;
         }
+
+        DB::table('user_password_histories')
+            ->where('user_id', $user->id)
+            ->whereNotIn('id', $idsToKeep)
+            ->delete();
     }
 
     /**
