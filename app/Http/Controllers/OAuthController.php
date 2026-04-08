@@ -342,14 +342,13 @@ class OAuthController extends Controller
         }
 
         $roles = $user->roles()
-            ->select(['roles.id', 'roles.name', 'roles.slug'])
+            ->select(['roles.name', 'roles.slug'])
             ->whereHas('applications', function ($query) use ($session) {
                 $query->where('applications.id', $session->application_id);
             })
             ->orderBy('roles.name')
             ->get()
             ->map(fn ($role) => [
-                'id' => $role->id,
                 'name' => $role->name,
                 'slug' => $role->slug,
             ])

@@ -291,7 +291,6 @@ Successful response example:
   "nrp": null,
   "roles": [
     {
-      "id": 2,
       "name": "Lecturer",
       "slug": "lecturer"
     }
@@ -315,7 +314,6 @@ Current profile fields returned:
 - `employee_type`
 - `nip`
 - `nrp`
-- `roles[].id`
 - `roles[].name`
 - `roles[].slug`
 - `organization.department`
