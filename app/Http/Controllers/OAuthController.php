@@ -341,6 +341,20 @@ class OAuthController extends Controller
             return response()->json(['error' => 'invalid_token'], 401);
         }
 
+        $roles = $user->roles()
+            ->select(['roles.id', 'roles.name', 'roles.slug'])
+            ->whereHas('applications', function ($query) use ($session) {
+                $query->where('applications.id', $session->application_id);
+            })
+            ->orderBy('roles.name')
+            ->get()
+            ->map(fn ($role) => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'slug' => $role->slug,
+            ])
+            ->values();
+
         $session->update(['last_activity' => now()]);
 
         return response()->json([
@@ -354,6 +368,7 @@ class OAuthController extends Controller
             'employee_type' => $user->employee_type,
             'nip' => $user->nip,
             'nrp' => $user->nrp,
+            'roles' => $roles,
             'organization' => [
                 'department' => optional(optional($user->primaryAffiliation)->department)->name,
                 'program_study' => optional(optional($user->primaryAffiliation)->programStudy)->name,

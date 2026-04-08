@@ -289,6 +289,13 @@ Successful response example:
   "employee_type": "lecturer",
   "nip": "19870001",
   "nrp": null,
+  "roles": [
+    {
+      "id": 2,
+      "name": "Lecturer",
+      "slug": "lecturer"
+    }
+  ],
   "organization": {
     "department": "Faculty of Engineering",
     "program_study": "Informatics",
@@ -308,9 +315,18 @@ Current profile fields returned:
 - `employee_type`
 - `nip`
 - `nrp`
+- `roles[].id`
+- `roles[].name`
+- `roles[].slug`
 - `organization.department`
 - `organization.program_study`
 - `organization.support_unit`
+
+Field source notes:
+- `roles` contains only the roles that grant the user access to the current client application tied to the presented access token.
+- For users linked to Microsoft 365, `name`, `email`, `department`, and `job_title` are treated as Microsoft-managed profile data in SSO.
+- These fields can be refreshed by SSO from Microsoft identity data and should be treated as mutable by client applications.
+- Use `sub` as your stable user identifier in your local database.
 
 Error response:
 - `401 {"error":"invalid_token"}` when token is missing, expired, or unknown
@@ -472,6 +488,7 @@ This means:
 - Implement callback handling for both `code` and `error` responses.
 - Exchange authorization code from the backend.
 - Use the access token to call `userinfo`.
+- Persist `sub` as the canonical external user key in your application.
 - Implement backchannel logout signing and verification if your app participates in single logout.
 
 ## 14. Current Limitations
@@ -480,3 +497,4 @@ This means:
 - No OpenID discovery document is exposed.
 - No JWKS endpoint is exposed.
 - Access tokens are opaque session-backed tokens, not JWTs.
+- No OAuth endpoint currently returns organization head assignment fields (head of department/support unit/program study).
