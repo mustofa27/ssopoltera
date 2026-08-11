@@ -6,6 +6,8 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\MicrosoftAuthController;
+use App\Http\Controllers\DirectionBoardController;
+use App\Http\Controllers\LecturerController;
 use App\Http\Controllers\OAuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileSyncController;
@@ -94,6 +96,9 @@ Route::middleware(['ip.policy', 'auth', 'active', 'idle.timeout', 'password.expi
         Route::get('/support-units/{supportUnit}/edit', [SupportUnitController::class, 'edit'])->name('support-units.edit');
         Route::put('/support-units/{supportUnit}', [SupportUnitController::class, 'update'])->name('support-units.update');
         Route::delete('/support-units/{supportUnit}', [SupportUnitController::class, 'destroy'])->name('support-units.destroy');
+
+        Route::get('/direction-board', [DirectionBoardController::class, 'edit'])->name('direction-board.edit');
+        Route::put('/direction-board', [DirectionBoardController::class, 'update'])->name('direction-board.update');
 
         Route::get('/profile-sync', [ProfileSyncController::class, 'index'])->name('profile-sync.index');
         Route::post('/profile-sync/import-all', [ProfileSyncController::class, 'importAll'])->name('profile-sync.import-all');

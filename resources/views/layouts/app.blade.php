@@ -327,6 +327,7 @@
                         <a class="sidebar-link {{ request()->routeIs('departments.*') ? 'active' : '' }}" href="{{ route('departments.index') }}"><span class="menu-icon">🏢</span><span class="menu-label">Departments</span></a>
                         <a class="sidebar-link {{ request()->routeIs('program-studies.*') ? 'active' : '' }}" href="{{ route('program-studies.index') }}"><span class="menu-icon">🎓</span><span class="menu-label">Programs</span></a>
                         <a class="sidebar-link {{ request()->routeIs('support-units.*') ? 'active' : '' }}" href="{{ route('support-units.index') }}"><span class="menu-icon">🧩</span><span class="menu-label">Support Units</span></a>
+                        <a class="sidebar-link {{ request()->routeIs('direction-board.*') ? 'active' : '' }}" href="{{ route('direction-board.edit') }}"><span class="menu-icon">🧭</span><span class="menu-label">Direction Board</span></a>
                         <a class="sidebar-link {{ request()->routeIs('profile-sync.*') ? 'active' : '' }}" href="{{ route('profile-sync.index') }}"><span class="menu-icon">🔄</span><span class="menu-label">Profile Sync</span></a>
                     @endif
                     @if(auth()->user()->hasPermission('manage_roles'))

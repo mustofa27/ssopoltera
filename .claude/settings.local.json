@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/Applications/MAMP/bin/php/php8.3.14/bin/php artisan *)",
+      "Bash(/Applications/MAMP/bin/php/php8.3.14/bin/php -l database/migrations/2026_08_11_102917_create_direction_board_table.php)",
+      "Bash(/Applications/MAMP/bin/php/php8.3.14/bin/php -l app/Models/DirectionBoard.php)",
+      "Bash(/Applications/MAMP/bin/php/php8.3.14/bin/php -l app/Http/Controllers/DirectionBoardController.php)",
+      "Bash(/Applications/MAMP/bin/php/php8.3.14/bin/php -l routes/web.php)",
+      "Bash(/Applications/MAMP/bin/php/php8.3.14/bin/php -l resources/views/direction-board/edit.blade.php)",
+      "Bash(ls /Applications/MAMP/Library/bin/ 2>/dev/null | grep -i mysql; ps aux | grep -i mysqld | grep -v grep)",
+      "Read(//Applications/MAMP/Library/bin/**)"
+    ]
+  }
+}
