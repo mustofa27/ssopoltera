@@ -73,6 +73,7 @@ Route::middleware(['ip.policy', 'auth', 'active', 'idle.timeout', 'password.expi
         Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
         Route::get('/departments/create', [DepartmentController::class, 'create'])->name('departments.create');
         Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
+        Route::get('/departments/{department}', [DepartmentController::class, 'view'])->name('departments.view');
         Route::get('/departments/{department}/affiliations/create', [UserAffiliationController::class, 'createForDepartment'])->name('departments.affiliations.create');
         Route::post('/departments/{department}/affiliations', [UserAffiliationController::class, 'storeForDepartment'])->name('departments.affiliations.store');
         Route::get('/departments/{department}/edit', [DepartmentController::class, 'edit'])->name('departments.edit');
@@ -82,6 +83,7 @@ Route::middleware(['ip.policy', 'auth', 'active', 'idle.timeout', 'password.expi
         Route::get('/program-studies', [ProgramStudyController::class, 'index'])->name('program-studies.index');
         Route::get('/program-studies/create', [ProgramStudyController::class, 'create'])->name('program-studies.create');
         Route::post('/program-studies', [ProgramStudyController::class, 'store'])->name('program-studies.store');
+        Route::get('/program-studies/{programStudy}', [ProgramStudyController::class, 'view'])->name('program-studies.view');
         Route::get('/program-studies/{programStudy}/affiliations/create', [UserAffiliationController::class, 'createForProgramStudy'])->name('program-studies.affiliations.create');
         Route::post('/program-studies/{programStudy}/affiliations', [UserAffiliationController::class, 'storeForProgramStudy'])->name('program-studies.affiliations.store');
         Route::get('/program-studies/{programStudy}/edit', [ProgramStudyController::class, 'edit'])->name('program-studies.edit');
@@ -91,6 +93,7 @@ Route::middleware(['ip.policy', 'auth', 'active', 'idle.timeout', 'password.expi
         Route::get('/support-units', [SupportUnitController::class, 'index'])->name('support-units.index');
         Route::get('/support-units/create', [SupportUnitController::class, 'create'])->name('support-units.create');
         Route::post('/support-units', [SupportUnitController::class, 'store'])->name('support-units.store');
+        Route::get('/support-units/{supportUnit}', [SupportUnitController::class, 'view'])->name('support-units.view');
         Route::get('/support-units/{supportUnit}/affiliations/create', [UserAffiliationController::class, 'createForSupportUnit'])->name('support-units.affiliations.create');
         Route::post('/support-units/{supportUnit}/affiliations', [UserAffiliationController::class, 'storeForSupportUnit'])->name('support-units.affiliations.store');
         Route::get('/support-units/{supportUnit}/edit', [SupportUnitController::class, 'edit'])->name('support-units.edit');

@@ -66,6 +66,18 @@ class DepartmentController extends Controller
         return redirect()->route('departments.index')->with('success', 'Department created successfully.');
     }
 
+    public function view(Department $department): View
+    {
+        $department->load('head:id,name,email');
+
+        $affiliations = $department->userAffiliations()
+            ->with('user:id,name,email,user_type,employee_type')
+            ->orderByDesc('is_primary')
+            ->get();
+
+        return view('departments.view', compact('department', 'affiliations'));
+    }
+
     public function edit(Department $department): View
     {
         $department->load('head:id,name,email');

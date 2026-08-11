@@ -6,6 +6,7 @@ use App\Models\Application;
 use App\Models\OAuthAuthorizationCode;
 use App\Models\SsoSession;
 use App\Models\User;
+use App\Models\UserAffiliation;
 use App\Support\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -326,7 +327,7 @@ class OAuthController extends Controller
         }
 
         $session = SsoSession::query()
-            ->with(['user.primaryAffiliation.department', 'user.primaryAffiliation.programStudy', 'user.primaryAffiliation.supportUnit'])
+            ->with(['user.affiliations.department', 'user.affiliations.programStudy', 'user.affiliations.supportUnit'])
             ->where('access_token', $bearerToken)
             ->where('expires_at', '>', now())
             ->first();
@@ -356,6 +357,8 @@ class OAuthController extends Controller
 
         $session->update(['last_activity' => now()]);
 
+        $primaryAffiliation = $user->affiliations->firstWhere('is_primary', true);
+
         return response()->json([
             'sub' => (string) $user->id,
             'name' => $user->name,
@@ -369,10 +372,11 @@ class OAuthController extends Controller
             'nrp' => $user->nrp,
             'roles' => $roles,
             'organization' => [
-                'department' => optional(optional($user->primaryAffiliation)->department)->name,
-                'program_study' => optional(optional($user->primaryAffiliation)->programStudy)->name,
-                'support_unit' => optional(optional($user->primaryAffiliation)->supportUnit)->name,
+                'department' => optional(optional($primaryAffiliation)->department)->name,
+                'program_study' => optional(optional($primaryAffiliation)->programStudy)->name,
+                'support_unit' => optional(optional($primaryAffiliation)->supportUnit)->name,
             ],
+            'affiliations' => $user->affiliations->map(fn (UserAffiliation $affiliation): array => $affiliation->toApiArray())->values(),
         ]);
     }
 

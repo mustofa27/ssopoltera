@@ -72,6 +72,18 @@ class ProgramStudyController extends Controller
         return redirect()->route('program-studies.index')->with('success', 'Program study created successfully.');
     }
 
+    public function view(ProgramStudy $programStudy): View
+    {
+        $programStudy->load(['department', 'head:id,name,email']);
+
+        $affiliations = $programStudy->userAffiliations()
+            ->with('user:id,name,email,user_type,employee_type')
+            ->orderByDesc('is_primary')
+            ->get();
+
+        return view('program-studies.view', compact('programStudy', 'affiliations'));
+    }
+
     public function edit(ProgramStudy $programStudy): View
     {
         $departments = Department::orderBy('name')->get();

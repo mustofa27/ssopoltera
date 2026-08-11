@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Application;
 use App\Models\User;
+use App\Models\UserAffiliation;
 use App\Support\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,7 @@ class LecturerController extends Controller
         $lecturers = User::query()
             ->where('user_type', 'employee')
             ->where('employee_type', 'lecturer')
-            ->with(['primaryAffiliation.department', 'primaryAffiliation.programStudy'])
+            ->with(['affiliations.department', 'affiliations.programStudy', 'affiliations.supportUnit'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($innerQuery) use ($search) {
                     $innerQuery
@@ -47,16 +48,22 @@ class LecturerController extends Controller
         );
 
         return response()->json([
-            'data' => $lecturers->getCollection()->map(fn (User $user): array => [
-                'id' => $user->id,
-                'nip' => $user->nip,
-                'name' => $user->name,
-                'email' => $user->email,
-                'job_title' => $user->job_title,
-                'is_active' => $user->is_active,
-                'department' => optional(optional($user->primaryAffiliation)->department)->name,
-                'program_study' => optional(optional($user->primaryAffiliation)->programStudy)->name,
-            ]),
+            'data' => $lecturers->getCollection()->map(function (User $user): array {
+                $primary = $user->affiliations->firstWhere('is_primary', true);
+
+                return [
+                    'id' => $user->id,
+                    'nip' => $user->nip,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'job_title' => $user->job_title,
+                    'is_active' => $user->is_active,
+                    'department' => optional(optional($primary)->department)->name,
+                    'program_study' => optional(optional($primary)->programStudy)->name,
+                    'support_unit' => optional(optional($primary)->supportUnit)->name,
+                    'affiliations' => $user->affiliations->map(fn (UserAffiliation $affiliation): array => $affiliation->toApiArray())->values(),
+                ];
+            }),
             'meta' => [
                 'current_page' => $lecturers->currentPage(),
                 'per_page' => $lecturers->perPage(),

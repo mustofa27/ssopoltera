@@ -64,6 +64,18 @@ class SupportUnitController extends Controller
         return redirect()->route('support-units.index')->with('success', 'Support unit created successfully.');
     }
 
+    public function view(SupportUnit $supportUnit): View
+    {
+        $supportUnit->load('head:id,name,email');
+
+        $affiliations = $supportUnit->userAffiliations()
+            ->with('user:id,name,email,user_type,employee_type')
+            ->orderByDesc('is_primary')
+            ->get();
+
+        return view('support-units.view', compact('supportUnit', 'affiliations'));
+    }
+
     public function edit(SupportUnit $supportUnit): View
     {
         $supportUnit->load('head:id,name,email');

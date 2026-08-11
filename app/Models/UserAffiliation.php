@@ -42,4 +42,22 @@ class UserAffiliation extends Model
     {
         return $this->belongsTo(SupportUnit::class);
     }
+
+    /**
+     * Serialize this affiliation for API responses, including only the
+     * organizational unit key(s) that are actually set on this record.
+     */
+    public function toApiArray(): array
+    {
+        $unit = array_filter([
+            'department' => optional($this->department)->name,
+            'program_study' => optional($this->programStudy)->name,
+            'support_unit' => optional($this->supportUnit)->name,
+        ], fn ($value) => $value !== null);
+
+        return array_merge([
+            'affiliation_type' => $this->affiliation_type,
+            'is_primary' => $this->is_primary,
+        ], $unit);
+    }
 }

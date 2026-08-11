@@ -299,7 +299,15 @@ Successful response example:
     "department": "Faculty of Engineering",
     "program_study": "Informatics",
     "support_unit": null
-  }
+  },
+  "affiliations": [
+    {
+      "affiliation_type": "home",
+      "is_primary": true,
+      "department": "Faculty of Engineering",
+      "program_study": "Informatics"
+    }
+  ]
 }
 ```
 
@@ -319,12 +327,15 @@ Current profile fields returned:
 - `organization.department`
 - `organization.program_study`
 - `organization.support_unit`
+- `affiliations[]`
 
 Field source notes:
 - `roles` contains only the roles that grant the user access to the current client application tied to the presented access token.
 - For users linked to Microsoft 365, `name`, `email`, `department`, and `job_title` are treated as Microsoft-managed profile data in SSO.
 - These fields can be refreshed by SSO from Microsoft identity data and should be treated as mutable by client applications.
 - Use `sub` as your stable user identifier in your local database.
+- `organization.*` reflects only the user's primary affiliation (`is_primary = true`).
+- `affiliations` lists every organizational affiliation the user has, not just the primary one. Each entry always has `affiliation_type` and `is_primary`, plus only whichever of `department`, `program_study`, or `support_unit` are actually set on that affiliation — keys with no data are omitted rather than sent as `null`.
 
 Error response:
 - `401 {"error":"invalid_token"}` when token is missing, expired, or unknown
